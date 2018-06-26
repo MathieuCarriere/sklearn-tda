@@ -6,61 +6,29 @@ Created on
 All rights reserved
 """
 
-import numpy      as np
-from scipy.signal import convolve2d
-#import gudhi as gd
+import numpy             as np
+from   scipy.signal      import convolve2d
+import matplotlib.pyplot as plt
 #import wasserstein as wass
 
 from sklearn.base          import BaseEstimator, TransformerMixin
 from sklearn.preprocessing import *
 
-#############################################
-# Utils #####################################
-#############################################
+try:
+    import gudhi as gd
+    USE_GUDHI = True
+    print("Gudhi found")
+except ImportError:
+    USE_GUDHI = False
+    print("Gudhi not found")
 
-def diag_to_array(data):
-
-    dataset, num_diag = [], len(data["0"].keys())
-
-    for dim in data.keys():
-
-        X = []
-
-        for diag in range(num_diag):
-            pers_diag = np.array(data[dim][str(diag)])
-            X.append(pers_diag)
-
-        dataset.append(X)
-
-    return dataset
-
-def diag_to_dict(D):
-    X = dict()
-    for f in D.keys():
-        df = diag_to_array(D[f])
-        for dim in range(len(df)):
-            X[str(dim) + "_" + f] = df[dim]
-    return X
-
-def show_persistence_diagram(X, idx):
-    diag = X[idx]
-    num_pts = diag.shape[0]
-    pd = []
-    for i in range(num_pts):
-        pd.append(  (0,[diag[i,0],diag[i,1]])  )
-    plot = gd.plot_persistence_diagram(pd)
-    plot.show()
-
-
-
-
-
-
-
-
-
-
-
+try:
+    import _c_vectors, _c_kernels
+    USE_CYTHON = True
+    print("Cython found")
+except ImportError:
+    USE_CYTHON = False
+    print("Cython not found")
 
 #############################################
 # Preprocessing #############################
@@ -165,7 +133,7 @@ class EssentialSelector(BaseEstimator, TransformerMixin):
 class FiniteDiagramVectorizer(BaseEstimator, TransformerMixin):
 
     def __init__(self, name = "PersistenceImage",
-                       kernel = "rbf", gaussian_bandwidth = 1.0, polynomial_bias = 1.0, polynomial_power = 1.0, weight = lambda x: 1,
+                       kernel = "rbf", gaussian_bandwidth = 1.0, polynomial_bias = 1.0, polynomial_power = 1.0, weight = "const",
                        resolution_x = 20, resolution_y = 20, min_x = np.nan, max_x = np.nan, min_y = np.nan, max_y = np.nan,
                        num_landscapes = 5):
 
@@ -219,46 +187,55 @@ class PersistenceImage(BaseEstimator, TransformerMixin):
 
             diagram, num_pts_in_diag = X[i], X[i].shape[0]
 
-            if isinstance(self.kernel, str) == True and self.kernel == "rbf":
+            if USE_GUDHI == True and isinstance(self.kernel, str) == True and isinstance(self.weight, str) == True:
 
-                w = np.ones(num_pts_in_diag)
-                for j in range(num_pts_in_diag):
-                    w[j] = self.weight(diagram[j,:])
+                Xfit.append(np.array(gd.persistence_image(diagram, min_x = self.min_x, max_x = self.max_x, res_x = self.resolution_x, min_y = self.min_y, max_y = self.max_y, res_y = self.resolution_y, weight = "linear", sigma = 1.0)).flatten()[np.newaxis,:])
 
-                x_values, y_values = np.linspace(self.min_x, self.max_x, self.resolution_x), np.linspace(self.min_y, self.max_y, self.resolution_y)
-                X, Y = np.meshgrid(x_values, y_values)
-                image = np.average(np.exp((-np.square(diagram[:,0][:,np.newaxis,np.newaxis]-X[np.newaxis,:])-np.square(diagram[:,1][:,np.newaxis,np.newaxis]-Y[np.newaxis,:])))/self.gaussian_bandwidth, axis = 0, weights = w)
+            else:
 
-            if isinstance(self.kernel, str) == True and self.kernel == "poly":
+                if USE_CYTHON == True and isinstance(self.kernel, str) == True and isinstance(self.weight, str) == True:
 
-                w = np.ones(num_pts_in_diag)
-                for j in range(num_pts_in_diag):
-                    w[j] = self.weight(diagram[j,:])
+                    Xfit.append(_c_vectors.persistence_image(diagram, self.min_x, self.max_x, self.resolution_x, self.min_y, self.max_y, self.resolution_y, self.kernel, self.weight, self.gaussian_bandwidth, self.polynomial_bias, self.polynomial_power))
 
-                x_values, y_values = np.linspace(self.min_x, self.max_x, self.resolution_x), np.linspace(self.min_y, self.max_y, self.resolution_y)
-                X, Y = np.meshgrid(x_values, y_values)
-                image = np.average(np.power(np.tensordot(  diagram, np.concatenate([X[np.newaxis,:],Y[np.newaxis,:]],0), 1) + self.polynomial_bias, self.polynomial_power), axis = 0, weights = w)
+                else:
 
-            if callable(self.kernel) == True:
+                    if callable(self.weight) == False:
+                        raise ValueError("Weight function needs to be defined in Python")
 
-                x_values, y_values = np.linspace(self.min_x, self.max_x, self.resolution_x), np.linspace(self.min_y, self.max_y, self.resolution_y)
-                X, Y = np.meshgrid(x_values, y_values)
-                image = np.zeros(X.shape)
-                for j in range(self.resolution_x):
-                    for k in range(self.resolution_y):
-                        point = np.array([X[j,k], Y[j,k]])
-                        for l in range(num_pts_in_diag):
-                            image[j,k] += self.weight(diagram[l,:]) * self.kernel(diagram[l,:], point)
+                    w = np.ones(num_pts_in_diag)
+                    for j in range(num_pts_in_diag):
+                        w[j] = self.weight(diagram[j,:])
 
-            if isinstance(self.kernel, np.ndarray) == True:
-                w = np.ones(num_pts_in_diag)
-                for j in range(num_pts_in_diag):
-                    w[j] = self.weight(diagram[j,:])
-                image = convolve2d(    np.histogram2d(diagram[:,0], diagram[:,1], bins=[self.resolution_x,self.resolution_y],
-                                                      range=[[self.min_x,self.max_x],[self.min_y,self.max_y]], weights = w)[0],
-                                       self.kernel, mode="same")
+                    if isinstance(self.kernel, str) == True and self.kernel == "rbf":
 
-            Xfit.append(image.flatten()[np.newaxis,:])
+                        x_values, y_values = np.linspace(self.min_x, self.max_x, self.resolution_x), np.linspace(self.min_y, self.max_y, self.resolution_y)
+                        Xs, Ys = np.tile((diagram[:,0][:,np.newaxis,np.newaxis]-x_values[np.newaxis,np.newaxis,:]),[1,self.resolution_y,1]), np.tile(diagram[:,1][:,np.newaxis,np.newaxis]-y_values[np.newaxis,:,np.newaxis],[1,1,self.resolution_x])
+                        image = np.tensordot(w, np.exp((-np.square(Xs)-np.square(Ys))/(2*self.gaussian_bandwidth*self.gaussian_bandwidth))/(self.gaussian_bandwidth*np.sqrt(2*np.pi)), 1)
+
+                    if isinstance(self.kernel, str) == True and self.kernel == "poly":
+
+                        x_values, y_values = np.linspace(self.min_x, self.max_x, self.resolution_x), np.linspace(self.min_y, self.max_y, self.resolution_y)
+                        Xs, Ys = np.meshgrid(x_values, y_values)
+                        image = np.tensordot(w, np.power(np.tensordot(  diagram, np.concatenate([Xs[np.newaxis,:],Ys[np.newaxis,:]],0), 1) + self.polynomial_bias, self.polynomial_power), 1)
+
+                    if callable(self.kernel) == True:
+
+                        x_values, y_values = np.linspace(self.min_x, self.max_x, self.resolution_x), np.linspace(self.min_y, self.max_y, self.resolution_y)
+                        Xs, Ys = np.meshgrid(x_values, y_values)
+                        image = np.zeros(Xs.shape)
+                        for j in range(self.resolution_y):
+                            for k in range(self.resolution_x):
+                                point = np.array([Xs[j,k], Ys[j,k]])
+                                for l in range(num_pts_in_diag):
+                                    image[j,k] += w[l] * self.kernel(diagram[l,:], point)
+
+                    if isinstance(self.kernel, np.ndarray) == True:
+
+                        image = convolve2d(    np.histogram2d(diagram[:,0], diagram[:,1], bins=[self.resolution_x,self.resolution_y],
+                                                              range=[[self.min_x,self.max_x],[self.min_y,self.max_y]], weights = w)[0],
+                                               self.kernel, mode="same")
+
+                    Xfit.append(image.flatten()[np.newaxis,:])
 
         return np.concatenate(Xfit,0)
 
@@ -283,32 +260,49 @@ class Landscape(BaseEstimator, TransformerMixin):
         for i in range(num_diag):
 
             diagram, num_pts_in_diag = X[i], X[i].shape[0]
-            ls = np.zeros([self.num_landscapes, self.resolution_x])
 
-            events = []
-            for j in range(self.resolution_x):
-                events.append([])
+            if USE_GUDHI == False:
 
-            for j in range(num_pts_in_diag):
-                [px,py] = diagram[j,:]
-                min_idx, mid_idx, max_idx = np.ceil((px - self.min_x) / step_x).astype(int), np.ceil( (0.5 * (py+px) - self.min_x) / step_x).astype(int), np.ceil((py - self.min_x) / step_x).astype(int)
+                if USE_CYTHON == True:
 
-                landscape_value = self.min_x + min_idx * step_x - px
-                for k in range(min_idx, mid_idx):
-                    events[k].append(landscape_value)
-                    landscape_value += step_x
+                    Xfit.append(np.array(_c_vectors.landscape(diagram, self.num_landscapes, self.min_x, self.max_x, self.resolution_x)).flatten()[np.newaxis,:])
 
-                landscape_value = py - self.min_x - mid_idx * step_x
-                for k in range(mid_idx, max_idx):
-                    events[k].append(landscape_value)
-                    landscape_value -= step_x
+                else:
 
-            for j in range(self.resolution_x):
-                events[j].sort(reverse = True)
-                for k in range( min(self.num_landscapes, len(events[j])) ):
-                    ls[k,j] = events[j][k]
+                    ls = np.zeros([self.num_landscapes, self.resolution_x])
 
-            Xfit.append(np.reshape(ls,[1,-1]))
+                    events = []
+                    for j in range(self.resolution_x):
+                        events.append([])
+
+                    for j in range(num_pts_in_diag):
+                        [px,py] = diagram[j,:]
+                        min_idx = np.minimum(np.maximum(np.ceil((px          - self.min_x) / step_x).astype(int), 0), self.resolution_x)
+                        mid_idx = np.minimum(np.maximum(np.ceil((0.5*(py+px) - self.min_x) / step_x).astype(int), 0), self.resolution_x)
+                        max_idx = np.minimum(np.maximum(np.ceil((py          - self.min_x) / step_x).astype(int), 0), self.resolution_x)
+
+                        if min_idx < self.resolution_x and max_idx > 0:
+
+                            landscape_value = self.min_x + min_idx * step_x - px
+                            for k in range(min_idx, mid_idx):
+                                events[k].append(landscape_value)
+                                landscape_value += step_x
+
+                            landscape_value = py - self.min_x - mid_idx * step_x
+                            for k in range(mid_idx, max_idx):
+                                events[k].append(landscape_value)
+                                landscape_value -= step_x
+
+                    for j in range(self.resolution_x):
+                        events[j].sort(reverse = True)
+                        for k in range( min(self.num_landscapes, len(events[j])) ):
+                            ls[k,j] = events[j][k]
+
+                    Xfit.append(np.sqrt(2)*np.reshape(ls,[1,-1]))
+
+            else:
+
+                Xfit.append(np.array(gd.landscape(diagram, self.num_landscapes, self.min_x, self.max_x, self.resolution_x)).flatten()[np.newaxis,:])
 
         return np.concatenate(Xfit,0)
 
@@ -433,61 +427,90 @@ def mergeSorted(a, b):
 
 class SlicedWasserstein(BaseEstimator, TransformerMixin):
 
-    def __init__(self, N = 10, gaussian_bandwidth = 10):
-        self.N      = N
-        self.gaussian_bandwidth  = gaussian_bandwidth
+    def __init__(self, N = 10, gaussian_bandwidth = 1.0):
+        self.N = N
+        self.gaussian_bandwidth = gaussian_bandwidth
 
     def fit(self, X, y = None):
-        num_diag, angles = len(X), np.linspace(-np.pi/2, np.pi/2, self.N)
-        self.thetas = np.concatenate(  [np.cos(angles)[np.newaxis,:], np.sin(angles)[np.newaxis,:]], 0)
-        self.proj, self.proj_delta = [], []
-        for i in range(num_diag):
 
-            diagram = X[i]
-            diag_thetas, list_proj = np.tensordot(diagram, self.thetas, 1), []
-            for j in range(self.N):
-                list_proj.append( list(np.sort(diag_thetas[:,j])) )
-            self.proj.append(list_proj)
+        if USE_GUDHI == False and USE_CYTHON == False:
 
-            diagonal_diagram = np.tensordot(diagram, np.array([[0.5,0.5],[0.5,0.5]]), 1)
-            diag_thetas, list_proj_delta = np.tensordot(diagonal_diagram, self.thetas, 1), []
-            for j in range(self.N):
-                list_proj_delta.append( list(np.sort(diag_thetas[:,j])) )
-            self.proj_delta.append(list_proj_delta)
+            num_diag = len(X)
+            angles = np.linspace(-np.pi/2, np.pi/2, self.N+1)
+            self.step_angle = angles[1] - angles[0]
+            self.thetas = np.concatenate([np.cos(angles[:-1])[np.newaxis,:], np.sin(angles[:-1])[np.newaxis,:]], 0)
+
+            self.proj, self.proj_delta = [], []
+            for i in range(num_diag):
+
+                diagram = X[i]
+                diag_thetas, list_proj = np.tensordot(diagram, self.thetas, 1), []
+                for j in range(self.N):
+                    list_proj.append( list(np.sort(diag_thetas[:,j])) )
+                self.proj.append(list_proj)
+
+                diagonal_diagram = np.tensordot(diagram, np.array([[0.5,0.5],[0.5,0.5]]), 1)
+                diag_thetas, list_proj_delta = np.tensordot(diagonal_diagram, self.thetas, 1), []
+                for j in range(self.N):
+                    list_proj_delta.append( list(np.sort(diag_thetas[:,j])) )
+                self.proj_delta.append(list_proj_delta)
+
+        else:
+
+            self.diagrams = X
 
         return self
 
     def transform(self, X):
 
-        num_diag2 = len(X)
-        proj, proj_delta = [], []
-        for i in range(num_diag2):
+        if USE_GUDHI == False:
 
-            diagram = X[i]
-            diag_thetas, list_proj = np.tensordot(diagram, self.thetas, 1), []
-            for j in range(self.N):
-                list_proj.append( list(np.sort(diag_thetas[:,j])) )
-            proj.append(list_proj)
+            if USE_CYTHON == False:
 
-            diagonal_diagram = np.tensordot(diagram, np.array([[0.5,0.5],[0.5,0.5]]), 1)
-            diag_thetas, list_proj_delta = np.tensordot(diagonal_diagram, self.thetas, 1), []
-            for j in range(self.N):
-                list_proj_delta.append( list(np.sort(diag_thetas[:,j])) )
-            proj_delta.append(list_proj_delta)
+                if self.N == -1:
+                    raise ValueError("Exact computation is not available in Python")
 
-        num_diag1 = len(self.proj)
-        Xfit = np.zeros( [num_diag1, num_diag2] )
-        for i in range(num_diag1):
-            for j in range(num_diag2):
+                num_diag2 = len(X)
+                proj, proj_delta = [], []
+                for i in range(num_diag2):
 
-                L1, L2 = [], []
-                for k in range(self.N):
-                    L1.append( np.array(mergeSorted(self.proj[i][k], proj_delta[j][k]))[:,np.newaxis] )
-                    L2.append( np.array(mergeSorted(proj[j][k], self.proj_delta[i][k]))[:,np.newaxis] )
-                L1, L2 = np.concatenate(L1,1), np.concatenate(L2,1)
-                Xfit[i,j] = np.average( np.sum(np.abs(L1-L2),0) )
+                    diagram = X[i]
+                    diag_thetas, list_proj = np.tensordot(diagram, self.thetas, 1), []
+                    for j in range(self.N):
+                        list_proj.append( list(np.sort(diag_thetas[:,j])) )
+                    proj.append(list_proj)
 
-        return np.exp(-Xfit/self.gaussian_bandwidth)
+                    diagonal_diagram = np.tensordot(diagram, np.array([[0.5,0.5],[0.5,0.5]]), 1)
+                    diag_thetas, list_proj_delta = np.tensordot(diagonal_diagram, self.thetas, 1), []
+                    for j in range(self.N):
+                        list_proj_delta.append( list(np.sort(diag_thetas[:,j])) )
+                    proj_delta.append(list_proj_delta)
+
+                num_diag1 = len(self.proj)
+                Xfit = np.zeros( [num_diag1, num_diag2] )
+                for i in range(num_diag1):
+                    for j in range(num_diag2):
+
+                        L1, L2 = [], []
+                        for k in range(self.N):
+                            lik, likd, ljk, ljkd = list(self.proj[i][k]), list(self.proj_delta[i][k]), list(proj[j][k]), list(proj_delta[j][k])
+                            L1.append( np.array(mergeSorted(lik, ljkd))[:,np.newaxis] )
+                            L2.append( np.array(mergeSorted(ljk, likd))[:,np.newaxis] )
+                        L1, L2 = np.concatenate(L1,1), np.concatenate(L2,1)
+
+                        Xfit[i,j] = np.sum(self.step_angle*np.sum(np.abs(L1-L2),0)/np.pi)
+
+                Xfit =  np.exp(-Xfit/(2*self.gaussian_bandwidth*self.gaussian_bandwidth))
+
+            else:
+
+                Xfit = np.array(_c_kernels.sliced_wasserstein_matrix(self.diagrams, X, self.gaussian_bandwidth, self.N))
+
+        else:
+
+            Xfit = np.array(gd.sliced_wasserstein_matrix(self.diagrams, X, self.gaussian_bandwidth, self.N))
+
+        return Xfit
 
 class PersistenceWeightedGaussian(BaseEstimator, TransformerMixin):
 
@@ -509,14 +532,6 @@ class PersistenceWeightedGaussian(BaseEstimator, TransformerMixin):
 
         self.diagrams = X
 
-        self.w = []
-        for i in range(len(X)):
-            num_pts_in_diag = X[i].shape[0]
-            w = np.ones(num_pts_in_diag)
-            for j in range(num_pts_in_diag):
-                w[j] = self.weight(X[i][j,:])
-            self.w.append(w)
-
         return self
 
     def transform(self, X):
@@ -526,40 +541,63 @@ class PersistenceWeightedGaussian(BaseEstimator, TransformerMixin):
                 op_X = np.tensordot(X[i],np.array([[0.0,1.0],[1.0,0.0]]), 1)
                 X[i] = np.concatenate([X[i],op_X], 0)
 
-        w = []
-        for i in range(len(X)):
-            num_pts_in_diag = X[i].shape[0]
-            we = np.ones(num_pts_in_diag)
-            for j in range(num_pts_in_diag):
-                we[j] = self.weight(X[i][j,:])
-            w.append(we)
+        if USE_GUDHI == True and isinstance(self.kernel, str) == True and isinstance(self.weight, str) == True:
 
-        num_diag1, num_diag2 = len(self.w), len(X)
-        Xfit = np.zeros([num_diag1, num_diag2])
+            Xfit = np.array(gd.persistence_weighted_gaussian_matrix())
 
-        if isinstance(self.kernel, str) == True and self.kernel == "rbf":
-            for i in range(num_diag1):
-                for j in range(num_diag2):
-                    d1x, d1y, d2x, d2y = self.diagrams[i][:,0][:,np.newaxis], self.diagrams[i][:,1][:,np.newaxis], X[j][:,0][np.newaxis,:], X[j][:,1][np.newaxis,:]
-                    Xfit[i,j] = np.average(np.average( np.exp( -(np.square(d1x-d2x) + np.square(d1y-d2y)) / self.gaussian_bandwidth ), axis=0, weights=self.w[i]), axis=0, weights = w[j])
+            else:
 
-        if isinstance(self.kernel, str) == True and self.kernel == "poly":
-            for i in range(num_diag1):
-                for j in range(num_diag2):
-                    Xfit[i,j] = np.average(np.average( np.power(np.tensordot(self.diagrams[i], np.transpose(X[j]), 1) + self.polynomial_bias, self.polynomial_power), axis=0, weights=self.w[i]), axis=0, weights = w[j])
+                if USE_CYTHON == True and isinstance(self.kernel, str) == True and isinstance(self.weight, str) == True:
 
-        if callable(self.kernel) == True:
-            for i in range(num_diag1):
-                num_pts1 = self.diagrams[i].shape[0]
-                for j in range(num_diag2):
-                    num_pts2 = X[j].shape[0]
+                    Xfit = np.array(_c_kernels.persistence_weighted_gaussian_matrix(self.diagrams, X, self.kernel, self.weight, self.gaussian_bandwidth, self.polynomial_bias, self.polynomial_power))
 
-                    kernel_matrix = np.zeros( [num_pts1, num_pts2] )
-                    for k in range(num_pts1):
-                        for l in range(num_pts2):
-                            kernel_matrix[k,l] = self.kernel( self.diagrams[i][k,:], X[j][l,:]  )
+                else:
 
-                    Xfit[i,j] = np.average(np.average(kernel_matrix, axis=0, weights=self.w[i]), axis=0, weights = w[j])
+                    if callable(self.weight) == False:
+                        raise ValueError("Weight function needs to be defined in Python")
+
+                    self.w, w = [], []
+
+                    for i in range(len(X)):
+                        num_pts_in_diag = X[i].shape[0]
+                        we = np.ones(num_pts_in_diag)
+                        for j in range(num_pts_in_diag):
+                            we[j] = self.weight(X[i][j,:])
+                        w.append(we)
+
+                    for i in range(len(self.diagrams)):
+                        num_pts_in_diag = self.diagrams[i].shape[0]
+                        we = np.ones(num_pts_in_diag)
+                        for j in range(num_pts_in_diag):
+                            we[j] = self.weight(self.diagrams[i][j,:])
+                        self.w.append(we)
+
+                    num_diag1, num_diag2 = len(self.w), len(X)
+                    Xfit = np.zeros([num_diag1, num_diag2])
+
+                    if isinstance(self.kernel, str) == True and self.kernel == "rbf":
+                        for i in range(num_diag1):
+                            for j in range(num_diag2):
+                                d1x, d1y, d2x, d2y = self.diagrams[i][:,0][:,np.newaxis], self.diagrams[i][:,1][:,np.newaxis], X[j][:,0][np.newaxis,:], X[j][:,1][np.newaxis,:]
+                                Xfit[i,j] = np.tensordot(w[j], np.tensordot(self.w[i], np.exp( -(np.square(d1x-d2x) + np.square(d1y-d2y)) / (2*self.gaussian_bandwidth*self.gaussian_bandwidth)) / (self.gaussian_bandwidth*np.sqrt(2*np.pi)), 1), 1)
+
+                    if isinstance(self.kernel, str) == True and self.kernel == "poly":
+                        for i in range(num_diag1):
+                            for j in range(num_diag2):
+                                Xfit[i,j] = np.tensordot(w[j], np.tensordot(self.w[i], np.power(np.tensordot(self.diagrams[i], np.transpose(X[j]), 1) + self.polynomial_bias, self.polynomial_power), 1), 1)
+
+                    if callable(self.kernel) == True:
+                        for i in range(num_diag1):
+                            num_pts1 = self.diagrams[i].shape[0]
+                            for j in range(num_diag2):
+                                num_pts2 = X[j].shape[0]
+
+                                kernel_matrix = np.zeros( [num_pts1, num_pts2] )
+                                for k in range(num_pts1):
+                                    for l in range(num_pts2):
+                                        kernel_matrix[k,l] = self.kernel( self.diagrams[i][k,:], X[j][l,:]  )
+
+                                Xfit[i,j] = np.tensordot(w[j], np.tensordot(self.w[i], kernel_matrix, 1), 1)
 
         return Xfit
 
