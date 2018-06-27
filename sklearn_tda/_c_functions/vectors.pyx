@@ -4,7 +4,7 @@ from libcpp.utility cimport pair
 from libcpp.string cimport string
 import os
 
-cdef extern from "Vectors_interface.h":
+cdef extern from "vectors/Vectors_interface.h":
     vector[vector[double]] compute_ls    (vector[pair[double, double]], int, double, double, int)
     vector[vector[double]] compute_pim   (vector[pair[double, double]], double, double, int, double, double, int, string, string, double, double, double)
 

@@ -4,7 +4,7 @@ from libcpp.utility cimport pair
 from libcpp.string cimport string
 import os
 
-cdef extern from "Kernels_interface.h":
+cdef extern from "kernels/Kernels_interface.h":
     double                 sw            (vector[pair[double, double]],          vector[pair[double, double]],          double, int)
     vector[vector[double]] sw_matrix     (vector[vector[pair[double, double]]],  vector[vector[pair[double, double]]],  double, int)
     double                 pwg           (vector[pair[double, double]],          vector[pair[double, double]],          string, string, double, double, double)

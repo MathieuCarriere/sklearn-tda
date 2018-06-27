@@ -4,7 +4,7 @@
 
 #include "Sliced_Wasserstein.h"
 #include "Persistence_weighted_gaussian.h"
-#include "utils.h"
+#include "../utils.h"
 
 // *******************
 // Kernel evaluations.

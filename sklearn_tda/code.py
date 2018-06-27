@@ -8,8 +8,6 @@ All rights reserved
 
 import numpy             as np
 from   scipy.signal      import convolve2d
-import matplotlib.pyplot as plt
-#import wasserstein as wass
 
 from sklearn.base          import BaseEstimator, TransformerMixin
 from sklearn.preprocessing import *
@@ -23,7 +21,10 @@ except ImportError:
     print("Gudhi not found")
 
 try:
-    import _c_vectors, _c_kernels
+    from .vectors import *
+    from .kernels import *
+    from .hera_wasserstein import *
+    from .hera_bottleneck import *
     USE_CYTHON = True
     print("Cython found")
 except ImportError:
@@ -195,7 +196,7 @@ class PersistenceImage(BaseEstimator, TransformerMixin):
 
                 if USE_CYTHON == True and isinstance(self.kernel, str) == True and isinstance(self.weight, str) == True:
 
-                    Xfit.append(_c_vectors.persistence_image(diagram, self.min_x, self.max_x, self.resolution_x, self.min_y, self.max_y, self.resolution_y, self.kernel, self.weight, self.gaussian_bandwidth, self.polynomial_bias, self.polynomial_power))
+                    Xfit.append(np.array(persistence_image(diagram, self.min_x, self.max_x, self.resolution_x, self.min_y, self.max_y, self.resolution_y, self.kernel, self.weight, self.gaussian_bandwidth, self.polynomial_bias, self.polynomial_power)).flatten()[np.newaxis,:])
 
                 else:
 
@@ -265,7 +266,7 @@ class Landscape(BaseEstimator, TransformerMixin):
 
                 if USE_CYTHON == True:
 
-                    Xfit.append(np.array(_c_vectors.landscape(diagram, self.num_landscapes, self.min_x, self.max_x, self.resolution_x)).flatten()[np.newaxis,:])
+                    Xfit.append(np.array(landscape(diagram, self.num_landscapes, self.min_x, self.max_x, self.resolution_x)).flatten()[np.newaxis,:])
 
                 else:
 
@@ -504,7 +505,7 @@ class SlicedWasserstein(BaseEstimator, TransformerMixin):
 
             else:
 
-                Xfit = np.array(_c_kernels.sliced_wasserstein_matrix(self.diagrams, X, self.gaussian_bandwidth, self.N))
+                Xfit = np.array(sliced_wasserstein_matrix(self.diagrams, X, self.gaussian_bandwidth, self.N))
 
         else:
 
@@ -543,61 +544,62 @@ class PersistenceWeightedGaussian(BaseEstimator, TransformerMixin):
 
         if USE_GUDHI == True and isinstance(self.kernel, str) == True and isinstance(self.weight, str) == True:
 
+            #TODO: add gudhi code
             Xfit = np.array(gd.persistence_weighted_gaussian_matrix())
+
+        else:
+
+            if USE_CYTHON == True and isinstance(self.kernel, str) == True and isinstance(self.weight, str) == True:
+
+                Xfit = np.array(persistence_weighted_gaussian_matrix(self.diagrams, X, self.kernel, self.weight, self.gaussian_bandwidth, self.polynomial_bias, self.polynomial_power))
 
             else:
 
-                if USE_CYTHON == True and isinstance(self.kernel, str) == True and isinstance(self.weight, str) == True:
+                if callable(self.weight) == False:
+                    raise ValueError("Weight function needs to be defined in Python")
 
-                    Xfit = np.array(_c_kernels.persistence_weighted_gaussian_matrix(self.diagrams, X, self.kernel, self.weight, self.gaussian_bandwidth, self.polynomial_bias, self.polynomial_power))
+                self.w, w = [], []
 
-                else:
+                for i in range(len(X)):
+                    num_pts_in_diag = X[i].shape[0]
+                    we = np.ones(num_pts_in_diag)
+                    for j in range(num_pts_in_diag):
+                        we[j] = self.weight(X[i][j,:])
+                    w.append(we)
 
-                    if callable(self.weight) == False:
-                        raise ValueError("Weight function needs to be defined in Python")
+                for i in range(len(self.diagrams)):
+                    num_pts_in_diag = self.diagrams[i].shape[0]
+                    we = np.ones(num_pts_in_diag)
+                    for j in range(num_pts_in_diag):
+                        we[j] = self.weight(self.diagrams[i][j,:])
+                    self.w.append(we)
 
-                    self.w, w = [], []
+                num_diag1, num_diag2 = len(self.w), len(X)
+                Xfit = np.zeros([num_diag1, num_diag2])
 
-                    for i in range(len(X)):
-                        num_pts_in_diag = X[i].shape[0]
-                        we = np.ones(num_pts_in_diag)
-                        for j in range(num_pts_in_diag):
-                            we[j] = self.weight(X[i][j,:])
-                        w.append(we)
+                if isinstance(self.kernel, str) == True and self.kernel == "rbf":
+                    for i in range(num_diag1):
+                        for j in range(num_diag2):
+                            d1x, d1y, d2x, d2y = self.diagrams[i][:,0][:,np.newaxis], self.diagrams[i][:,1][:,np.newaxis], X[j][:,0][np.newaxis,:], X[j][:,1][np.newaxis,:]
+                            Xfit[i,j] = np.tensordot(w[j], np.tensordot(self.w[i], np.exp( -(np.square(d1x-d2x) + np.square(d1y-d2y)) / (2*self.gaussian_bandwidth*self.gaussian_bandwidth)) / (self.gaussian_bandwidth*np.sqrt(2*np.pi)), 1), 1)
 
-                    for i in range(len(self.diagrams)):
-                        num_pts_in_diag = self.diagrams[i].shape[0]
-                        we = np.ones(num_pts_in_diag)
-                        for j in range(num_pts_in_diag):
-                            we[j] = self.weight(self.diagrams[i][j,:])
-                        self.w.append(we)
+                if isinstance(self.kernel, str) == True and self.kernel == "poly":
+                    for i in range(num_diag1):
+                        for j in range(num_diag2):
+                            Xfit[i,j] = np.tensordot(w[j], np.tensordot(self.w[i], np.power(np.tensordot(self.diagrams[i], np.transpose(X[j]), 1) + self.polynomial_bias, self.polynomial_power), 1), 1)
 
-                    num_diag1, num_diag2 = len(self.w), len(X)
-                    Xfit = np.zeros([num_diag1, num_diag2])
+                if callable(self.kernel) == True:
+                    for i in range(num_diag1):
+                        num_pts1 = self.diagrams[i].shape[0]
+                        for j in range(num_diag2):
+                            num_pts2 = X[j].shape[0]
 
-                    if isinstance(self.kernel, str) == True and self.kernel == "rbf":
-                        for i in range(num_diag1):
-                            for j in range(num_diag2):
-                                d1x, d1y, d2x, d2y = self.diagrams[i][:,0][:,np.newaxis], self.diagrams[i][:,1][:,np.newaxis], X[j][:,0][np.newaxis,:], X[j][:,1][np.newaxis,:]
-                                Xfit[i,j] = np.tensordot(w[j], np.tensordot(self.w[i], np.exp( -(np.square(d1x-d2x) + np.square(d1y-d2y)) / (2*self.gaussian_bandwidth*self.gaussian_bandwidth)) / (self.gaussian_bandwidth*np.sqrt(2*np.pi)), 1), 1)
+                            kernel_matrix = np.zeros( [num_pts1, num_pts2] )
+                            for k in range(num_pts1):
+                                for l in range(num_pts2):
+                                    kernel_matrix[k,l] = self.kernel( self.diagrams[i][k,:], X[j][l,:]  )
 
-                    if isinstance(self.kernel, str) == True and self.kernel == "poly":
-                        for i in range(num_diag1):
-                            for j in range(num_diag2):
-                                Xfit[i,j] = np.tensordot(w[j], np.tensordot(self.w[i], np.power(np.tensordot(self.diagrams[i], np.transpose(X[j]), 1) + self.polynomial_bias, self.polynomial_power), 1), 1)
-
-                    if callable(self.kernel) == True:
-                        for i in range(num_diag1):
-                            num_pts1 = self.diagrams[i].shape[0]
-                            for j in range(num_diag2):
-                                num_pts2 = X[j].shape[0]
-
-                                kernel_matrix = np.zeros( [num_pts1, num_pts2] )
-                                for k in range(num_pts1):
-                                    for l in range(num_pts2):
-                                        kernel_matrix[k,l] = self.kernel( self.diagrams[i][k,:], X[j][l,:]  )
-
-                                Xfit[i,j] = np.tensordot(w[j], np.tensordot(self.w[i], kernel_matrix, 1), 1)
+                            Xfit[i,j] = np.tensordot(w[j], np.tensordot(self.w[i], kernel_matrix, 1), 1)
 
         return Xfit
 
@@ -614,43 +616,54 @@ class PersistenceWeightedGaussian(BaseEstimator, TransformerMixin):
 # Metrics ###################################
 #############################################
 
-def compute_wass_matrix(diags1, diags2, p = 1):
+def compute_wass_matrix(diags1, diags2, p = 1, delta = 0.001):
 
     num_diag1 = len(diags1)
 
     if diags1 == diags2:
         matrix = np.zeros((num_diag1, num_diag1))
-        if np.isinf(p):
-            for i in range(num_diag1):
-                for j in range(i+1, num_diag1):
-                    matrix[i,j] = gd.bottleneck_distance(diags1[i], diags1[j])
-                    matrix[j,i] = matrix[i,j]
+
+        if USE_CYTHON == True:
+            if np.isinf(p):
+                for i in range(num_diag1):
+                    for j in range(i+1, num_diag1):
+                        matrix[i,j] = bottleneck(diags1[i], diags1[j], delta)
+                        matrix[j,i] = matrix[i,j]
+            else:
+                for i in range(num_diag1):
+                    for j in range(i+1, num_diag1):
+                        matrix[i,j] = wasserstein(diags1[i], diags1[j], p, delta)
+                        matrix[j,i] = matrix[i,j]
         else:
-            for i in range(num_diag1):
-                for j in range(i+1, num_diag1):
-                    matrix[i,j] = wass.wasserstein(diags1[i], diags1[j], p)
-                    matrix[j,i] = matrix[i,j]
+            print("Cython required---returning null matrix")
+
     else:
         num_diag2 = len(X2)
         matrix = np.zeros((num_diag1, num_diag2))
-        if np.isinf(p):
-            for i in range(num_diag1):
-                for j in range(num_diag2):
-                    matrix[i,j] = gd.bottleneck_distance(diags1[i], diags2[j])
+
+        if USE_CYTHON == True:
+            if np.isinf(p):
+                for i in range(num_diag1):
+                    for j in range(num_diag2):
+                        matrix[i,j] = bottleneck.bottleneck(diags1[i], diags2[j], delta)
+            else:
+                for i in range(num_diag1):
+                    for j in range(num_diag2):
+                        matrix[i,j] = wasserstein(diags1[i], diags2[j], p, delta)
         else:
-            for i in range(num_diag1):
-                for j in range(num_diag2):
-                    matrix[i,j] = wass.wasserstein(diags1[i], diags2[j], p)
+            print("Cython required---returning null matrix")
+
     return matrix
 
 class DiagramMetrizer(BaseEstimator, TransformerMixin):
 
-    def __init__(self, wasserstein_parameter = 1):
+    def __init__(self, wasserstein_parameter = 1, delta = 0.001):
         self.wasserstein_parameter = wasserstein_parameter
+        self.delta = delta
 
     def fit(self, X, y = None):
         self.diagrams = X
         return self
 
     def transform(self, X):
-        return compute_wass_matrix(X, self.diagrams, self.wasserstein_parameter)
+        return compute_wass_matrix(X, self.diagrams, self.wasserstein_parameter, self.delta)

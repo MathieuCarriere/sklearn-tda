@@ -8,23 +8,37 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 ext_address = "./sklearn_tda/_c_functions/"
-vect = Extension(name="sklearn_tda._c_vectors",
-                sources=[ext_address + "vectors.pyx"],
-                language="c++",
-                extra_compile_args=["-std=c++14"], 
-                extra_link_args=["-std=c++11"])
+vect = Extension(name="sklearn_tda.vectors",
+                 sources=[ext_address + "vectors.pyx"],
+                 language="c++",
+                 extra_compile_args=["-std=c++14"],
+                 extra_link_args=["-std=c++11"])
 
-kern = Extension(name="sklearn_tda._c_kernels",
-                sources=[ext_address + "kernels.pyx"],
-                language="c++",
-                extra_compile_args=["-std=c++14"], 
-                extra_link_args=["-std=c++11"])
+kern = Extension(name="sklearn_tda.kernels",
+                 sources=[ext_address + "kernels.pyx"],
+                 language="c++",
+                 extra_compile_args=["-std=c++14"],
+                 extra_link_args=["-std=c++11"])
+
+hera_w = Extension(name="sklearn_tda.hera_wasserstein",
+                 sources=[ext_address + "hera_w.pyx"],
+                 language="c++",
+                 extra_compile_args=["-std=c++14", "-I./sklearn_tda/_c_functions/hera/geom_matching/wasserstein/include/"],
+                 extra_link_args=["-std=c++11"])
+
+hera_b = Extension(name="sklearn_tda.hera_bottleneck",
+                 sources=[ext_address + "hera_b.pyx"],
+                 language="c++",
+                 extra_compile_args=["-std=c++14", "-I./sklearn_tda/_c_functions/hera/geom_bottleneck/include/"],
+                 extra_link_args=["-std=c++11"])
 
 try:
     from Cython.Distutils import build_ext
-    modules = [vect, kern]
+    modules = [vect, kern, hera_w, hera_b]
+    print("Cython found")
 except ImportError:
     modules = []
+    print("Cython not found")
 
 setuptools.setup(
     name="sklearn_tda",
@@ -42,4 +56,5 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ),
     ext_modules = modules,
+    cmdclass = {"build_ext": build_ext},
 )

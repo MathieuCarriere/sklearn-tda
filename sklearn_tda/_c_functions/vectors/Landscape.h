@@ -28,9 +28,14 @@ class Landscape {
      std::vector<std::vector<double> > ls_t; for(int i = 0; i < res_x; i++)  ls_t.emplace_back();
      for(int j = 0; j < num_pts; j++){
        double px = diagram[j].first; double py = diagram[j].second; double mid = (px+py)/2;
-       int first = std::ceil((px-min_x)/step); int middle = std::ceil((mid-min_x)/step); int last = std::ceil((py-min_x)/step); double x = min_x + first*step;
-       for(int i = first; i < middle; i++){  double value = std::sqrt(2)*(x-px); ls_t[i].push_back(value); x += step;  }
-       for(int i = middle; i < last; i++){   double value = std::sqrt(2)*(py-x); ls_t[i].push_back(value); x += step;  }
+       int first  = std::min(this->res_x, std::max(0, (int) std::ceil((px-min_x)/step)));
+       int middle = std::min(this->res_x, std::max(0, (int) std::ceil((mid-min_x)/step)));
+       int last   = std::min(this->res_x, std::max(0, (int) std::ceil((py-min_x)/step)));
+       if(first < this->res_x && last > 0){
+         double x = min_x + first*step;
+         for(int i = first; i < middle; i++){  double value = std::sqrt(2)*(x-px); ls_t[i].push_back(value); x += step;  }
+         for(int i = middle; i < last; i++){   double value = std::sqrt(2)*(py-x); ls_t[i].push_back(value); x += step;  }
+       }
      }
 
      for(int i = 0; i < res_x; i++){

@@ -10,7 +10,7 @@
 #include <utility>
 #include <functional>
 #include <random>
-#include "utils.h"
+#include "../utils.h"
 
 class Persistence_weighted_gaussian{
 
