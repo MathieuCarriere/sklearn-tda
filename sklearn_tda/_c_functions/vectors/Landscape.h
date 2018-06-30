@@ -1,14 +1,4 @@
-// standard include
-#include <cmath>
-#include <iostream>
-#include <vector>
-#include <limits>
-#include <fstream>
-#include <sstream>
-#include <algorithm>
-#include <string>
-#include <utility>
-#include <functional>
+#include "../utils.h"
 
 class Landscape {
 

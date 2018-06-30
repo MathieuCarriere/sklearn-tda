@@ -1,15 +1,3 @@
-// standard include
-#include <cmath>
-#include <iostream>
-#include <vector>
-#include <limits>
-#include <fstream>
-#include <sstream>
-#include <algorithm>
-#include <string>
-#include <utility>
-#include <functional>
-#include <random>
 #include "../utils.h"
 
 class Persistence_weighted_gaussian{
@@ -22,7 +10,7 @@ class Persistence_weighted_gaussian{
 
  public:
 
-  Persistence_weighted_gaussian(const std::vector<std::pair<double,double> > & _diagram, const Kernel & _kernel = rbf_kernel(1.0), const Weight & _weight = linear_weight){
+  Persistence_weighted_gaussian(const std::vector<std::pair<double,double> > & _diagram, const Kernel& _kernel = rbf_kernel(1.0), const Weight& _weight = linear_weight){
       diagram = _diagram; weight = _weight; kernel = _kernel;
       for(size_t i = 0; i < this->diagram.size(); i++)  this->w.push_back(this->weight(this->diagram[i]));
   }

@@ -1,7 +1,3 @@
-#include <iostream>
-#include <vector>
-#include <utility>  // for std::pair
-
 #include "Sliced_Wasserstein.h"
 #include "Persistence_weighted_gaussian.h"
 #include "../utils.h"
@@ -16,24 +12,11 @@ double sw(const std::vector<std::pair<double, double>>& diag1, const std::vector
   return sw1.compute_scalar_product(sw2);
 }
 
-double pwg(const std::vector<std::pair<double, double>>& diag1, const std::vector<std::pair<double, double>>& diag2, std::string kernel, std::string weight,
-           double sigma = 1.0, double c = 1.0, double d = 1.0) {
-
-  Weight weight_fn;
-  if(weight.compare("linear") == 0)  weight_fn = linear_weight;
-  if(weight.compare("arctan") == 0)  weight_fn = arctan_weight(1.0,1.0);
-  if(weight.compare("const")  == 0)  weight_fn = const_weight;
-  if(weight.compare("pss")  == 0)    weight_fn = pss_weight;
-
-  Kernel kernel_fn;
-  if(kernel.compare("rbf") == 0)  kernel_fn = rbf_kernel(sigma);
-  if(kernel.compare("poly") == 0) kernel_fn = poly_kernel(c,d);
-
-  Persistence_weighted_gaussian pwg1(diag1, kernel_fn, weight_fn);
-  Persistence_weighted_gaussian pwg2(diag2, kernel_fn, weight_fn);
+double pwg(const std::vector<std::pair<double, double>>& diag1, const std::vector<std::pair<double, double>>& diag2, const Kernel& k, const Weight& w){
+  Persistence_weighted_gaussian pwg1(diag1, k, w);
+  Persistence_weighted_gaussian pwg2(diag2, k, w);
   return pwg1.compute_scalar_product(pwg2);
 }
-
 
 // ****************
 // Kernel matrices.
@@ -52,11 +35,11 @@ std::vector<std::vector<double> > sw_matrix(const std::vector<std::vector<std::p
   return matrix;
 }
 
-std::vector<std::vector<double> > pwg_matrix(const std::vector<std::vector<std::pair<double, double> > >& s1, const std::vector<std::vector<std::pair<double, double> > >& s2, std::string kernel, std::string weight, double sigma = 1.0, double c = 1.0, double d = 1.0){
+std::vector<std::vector<double> > pwg_matrix(const std::vector<std::vector<std::pair<double, double> > >& s1, const std::vector<std::vector<std::pair<double, double> > >& s2, const Kernel & kernel, const Weight & weight){
   std::vector<std::vector<double> > matrix; int num_diag_1 = s1.size(); int num_diag_2 = s2.size();
   for(int i = 0; i < num_diag_1; i++){
     std::cout << 100.0*i/num_diag_1 << " %" << std::endl;
-    std::vector<double> ps; for(int j = 0; j < num_diag_2; j++) ps.push_back(pwg(s1[i], s2[j], kernel, weight, sigma, c, d)); matrix.push_back(ps);
+    std::vector<double> ps; for(int j = 0; j < num_diag_2; j++) ps.push_back(pwg(s1[i], s2[j], kernel, weight)); matrix.push_back(ps);
   }
   return matrix;
 }

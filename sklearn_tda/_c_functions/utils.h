@@ -1,13 +1,22 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#include <utility>
-#include <string>
 #include <cmath>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <algorithm>
+#include <functional>
+#include <utility>
+#include <vector>
+#include <limits>
+#include <string>
+#include <Python.h>
 
-using Weight = std::function<double (std::pair<double,double>) >;
-using Kernel = std::function<double (std::pair<double,double>, std::pair<double,double>) >;
-double pi = 3.1415;
+typedef std::function<double (std::pair<double,double>) > Weight;
+typedef std::function<double (std::pair<double,double>, std::pair<double,double>) > Kernel;
+
+double pi = 3.14159265358979323846264338327950288419716939937510;
 
 double pss_weight(std::pair<double,double> p)     {if(p.second > p.first)  return 1; else return -1;}
 double linear_weight(std::pair<double,double> p)  {return std::abs(p.second);}

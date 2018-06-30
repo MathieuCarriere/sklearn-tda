@@ -1,0 +1,105 @@
+class FiniteDiagramVectorizer(BaseEstimator, TransformerMixin):
+
+    def __init__(self, name = "PersistenceImage",
+                       kernel = "rbf", gaussian_bandwidth = 1.0, polynomial_bias = 1.0, polynomial_power = 1.0, weight = "const",
+                       resolution_x = 20, resolution_y = 20, min_x = np.nan, max_x = np.nan, min_y = np.nan, max_y = np.nan,
+                       num_landscapes = 5, silhouette_power = 1.0, vector_threshold = 10):
+
+        self.name                = name
+
+        self.kernel              = kernel
+        self.gaussian_bandwidth  = gaussian_bandwidth
+        self.polynomial_bias     = polynomial_bias
+        self.polynomial_power    = polynomial_power
+        self.weight              = weight
+
+        self.resolution_x        = resolution_x
+        self.resolution_y        = resolution_y
+        self.min_x               = min_x
+        self.max_x               = max_x
+        self.min_y               = min_y
+        self.max_y               = max_y
+
+        self.num_landscapes      = num_landscapes
+        self.silhouette_power    = 1.0
+        self.vector_threshold    = 10
+
+    def fit(self, X, y = None):
+        if self.name == "PersistenceImage":
+            self.vectorizer = PersistenceImage(self.kernel, self.gaussian_bandwidth, self.polynomial_bias, self.polynomial_power, self.weight,
+                                               self.resolution_x, self.resolution_y, self.min_x, self.max_x, self.min_y, self.max_y)
+        if self.name == "Landscape":
+            self.vectorizer = Landscape(self.num_landscapes, self.resolution_x, self.min_x, self.max_x)
+
+        if self.name == "BettiCurve":
+            self.vectorizer = BettiCurve(self.resolution_x, self.min_x, self.max_x)
+
+        if self.name == "Silhouette":
+            self.vectorizer = Silhouette(self.silhouette_power, self.resolution_x, self.min_x, self.max_x)
+
+        if self.name == "TopologicalVector":
+            self.vectorizer = TopologicalVector(self.vector_threshold)
+
+        self.vectorizer.fit(X, y)
+        return self
+
+    def transform(self, X):
+
+        return self.vectorizer.transform(X)
+
+class DiagramKernelizer(BaseEstimator, TransformerMixin):
+
+    def __init__(self, name = "SlicedWasserstein",
+                       num_directions = 10,
+                       kernel = "rbf", gaussian_bandwidth = 1.0, polynomial_bias = 1.0, polynomial_power = 1.0, weight = lambda x: 1, use_pss = False):
+
+        self.name               = name
+
+        self.num_directions     = num_directions
+
+        self.kernel             = kernel
+        self.gaussian_bandwidth = gaussian_bandwidth
+        self.polynomial_bias    = polynomial_bias
+        self.polynomial_power   = polynomial_power
+        self.weight             = weight
+        self.use_pss            = use_pss
+
+    def fit(self, X, y = None):
+
+        if(self.name == "SlicedWasserstein"):
+            self.kernel = SlicedWasserstein(N=self.num_directions, gaussian_bandwidth=self.gaussian_bandwidth)
+
+        if(self.name == "PersistenceScaleSpace"):
+            self.kernel = PersistenceWeightedGaussian(kernel = "rbf", gaussian_bandwidth = self.gaussian_bandwidth, weight = lambda x: 1 if x[1] >= x[0] else -1, use_pss = True)
+
+        if(self.name == "PersistenceWeightedGaussian"):
+            self.kernel = PersistenceWeightedGaussian(kernel = self.kernel, gaussian_bandwidth=self.gaussian_bandwidth, polynomial_bias = self.polynomial_bias,
+                                                      polynomial_power = self.polynomial_power, weight = self.weight, use_pss = False)
+        return self.kernel.fit(X, y)
+
+    def transform(self, X):
+        return self.kernel.transform(X)
+
+                if self.kernel == "rbf":
+
+                    x_values, y_values = np.linspace(self.range[0], self.range[1], self.resolution[0]), np.linspace(self.range[2], self.range[3], self.resolution[1])
+                    Xs, Ys = np.tile((diagram[:,0][:,np.newaxis,np.newaxis]-x_values[np.newaxis,np.newaxis,:]),[1,self.resolution[1],1]), np.tile(diagram[:,1][:,np.newaxis,np.newaxis]-y_values[np.newaxis,:,np.newaxis],[1,1,self.resolution[0]])
+                    image = np.tensordot(w, np.exp((-np.square(Xs)-np.square(Ys))/(2*self.gaussian_bandwidth*self.gaussian_bandwidth))/(self.gaussian_bandwidth*np.sqrt(2*np.pi)), 1)
+
+                if self.kernel == "poly":
+
+                    x_values, y_values = np.linspace(self.range[0], self.range[1], self.resolution[0]), np.linspace(self.range[2], self.range[3], self.resolution[1])
+                    Xs, Ys = np.meshgrid(x_values, y_values)
+                    image = np.tensordot(w, np.power(np.tensordot(  diagram, np.concatenate([Xs[np.newaxis,:],Ys[np.newaxis,:]],0), 1) + self.polynomial_bias, self.polynomial_power), 1)
+
+
+            if self.kernel == "rbf":
+                for i in range(num_diag1):
+                    for j in range(num_diag2):
+                        d1x, d1y, d2x, d2y = self.diagrams[i][:,0][:,np.newaxis], self.diagrams[i][:,1][:,np.newaxis], X[j][:,0][np.newaxis,:], X[j][:,1][np.newaxis,:]
+                        Xfit[i,j] = np.tensordot(w[j], np.tensordot(self.w[i], np.exp( -(np.square(d1x-d2x) + np.square(d1y-d2y)) / (2*self.gaussian_bandwidth*self.gaussian_bandwidth)) / (self.gaussian_bandwidth*np.sqrt(2*np.pi)), 1), 1)
+
+            if self.kernel == "poly":
+                for i in range(num_diag1):
+                    for j in range(num_diag2):
+                        Xfit[i,j] = np.tensordot(w[j], np.tensordot(self.w[i], np.power(np.tensordot(self.diagrams[i], np.transpose(X[j]), 1) + self.polynomial_bias, self.polynomial_power), 1), 1)
