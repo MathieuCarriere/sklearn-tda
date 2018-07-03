@@ -5,13 +5,13 @@ class Persistence_weighted_gaussian{
  protected:
     std::vector<std::pair<double,double> > diagram;
     Weight weight;
-    Kernel kernel;
+    double sigma;
     std::vector<double> w;
 
  public:
 
-  Persistence_weighted_gaussian(const std::vector<std::pair<double,double> > & _diagram, const Kernel& _kernel = rbf_kernel(1.0), const Weight& _weight = linear_weight){
-      diagram = _diagram; weight = _weight; kernel = _kernel;
+  Persistence_weighted_gaussian(const std::vector<std::pair<double,double> > & _diagram, double _sigma, const Weight& _weight){
+      diagram = _diagram; weight = _weight; sigma = _sigma;
       for(size_t i = 0; i < this->diagram.size(); i++)  this->w.push_back(this->weight(this->diagram[i]));
   }
 
@@ -20,7 +20,7 @@ class Persistence_weighted_gaussian{
     int num_pts1 = diagram1.size(); int num_pts2 = diagram2.size(); double k = 0;
     for(int i = 0; i < num_pts1; i++)
       for(int j = 0; j < num_pts2; j++)
-        k += this->w[i] * second.w[j] * this->kernel(diagram1[i], diagram2[j]);
+        k += this->w[i] * second.w[j] * (1/(this->sigma*std::sqrt(2*pi))) * std::exp(  -((diagram1[i].first-diagram2[j].first)*(diagram1[i].first-diagram2[j].first)+(diagram1[i].second-diagram2[j].second)*(diagram1[i].second-diagram2[j].second)) / (2*this->sigma*this->sigma)  );
     return k;
   }
 

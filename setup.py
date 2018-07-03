@@ -1,11 +1,4 @@
-from __future__ import print_function
-import sys
-from warnings import warn
-from platform import system
-import setuptools
 from setuptools import setup, find_packages, Extension
-from Cython.Build import cythonize
-from Cython.Distutils import build_ext
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
@@ -37,24 +30,25 @@ hera_b = Extension(name="sklearn_tda.hera_bottleneck",
 
 try:
     from Cython.Distutils import build_ext
-    modules = [vect, kern, hera_w, hera_b]
+    from Cython.Build     import cythonize
+    modules1, modules2, cmds = cythonize([vect]), cythonize([kern, hera_w, hera_b]), {"build_ext": build_ext}
     print("Cython found")
 
 except ImportError:
-    modules = []
+    modules1, modules2, cmds = [], [], {}
     print("Cython not found")
 
-setuptools.setup(
-    name="sklearn_tda",
-    version="2",
-    author="Mathieu Carriere",
-    author_email="mathieu.carriere3@gmail.com",
-    description="A scikit-learn compatible package for doing Machine Learning and TDA",
-    long_description=long_description,
-    long_description_content_type="text/markdown",
-    url="https://github",
-    packages=setuptools.find_packages(),
-    classifiers=("Programming Language :: Python :: 3", "License :: OSI Approved :: MIT License", "Operating System :: OS Independent"),
-    ext_modules = cythonize(modules),
-    cmdclass = {"build_ext": build_ext},
+setup(
+    name                           = "sklearn_tda",
+    version                        = "0",
+    author                         = "Mathieu Carriere",
+    author_email                   = "mathieu.carriere3@gmail.com",
+    description                    = "A scikit-learn compatible package for doing Machine Learning and TDA",
+    long_description               = long_description,
+    long_description_content_type  = "text/markdown",
+    url                            = "https://github.com/MathieuCarriere/sklearn_tda/",
+    packages                       = find_packages(),
+    classifiers                    = ("Programming Language :: Python :: 3", "License :: OSI Approved :: MIT License", "Operating System :: OS Independent"),
+    ext_modules                    = modules1 + modules2,
+    cmdclass                       = cmds,
 )

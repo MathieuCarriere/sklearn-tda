@@ -1,14 +1,4 @@
-#include <iostream>
-#include <vector>
-#include <map>
-#include <string>
-#include <limits>
-#include <utility>
-#include <algorithm>
-#include <random>
-#include <cassert>
-#include <cmath>
-
+#include "../utils.h"
 #include "geom_bottleneck/include/bottleneck.h"
 
 using namespace std;

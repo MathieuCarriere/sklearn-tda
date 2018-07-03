@@ -16,6 +16,7 @@ from .code import BirthPersistenceTransform
 
 from .code import SlicedWasserstein
 from .code import PersistenceWeightedGaussian
+from .code import PersistenceScaleSpace
 
 from .code import WassersteinDistance
 
@@ -34,7 +35,8 @@ __all__ = [
     "BirthPersistenceTransform",
 
     "SlicedWasserstein",
-    "PersistenceWeightedGaussian"
+    "PersistenceWeightedGaussian",
+    "PersistenceScaleSpace",
 
     "WassersteinDistance"
 ]

@@ -63,8 +63,8 @@ Currently available classes are:
 
     | **name** | **description** |
     | --- | --- |
-    |**kernel**| kernel on the plane to use. Can be a python function or a np.ndarray matrix.|
-    |**weight**| weight on diagram points. It is a python function.|
+    |**bandwidth** = 1.0 | Bandwidth of Gaussian kernel on the plane.|
+    |**weight** = lambda x: 1| weight on diagram points. It is a python function.|
     |**resolution** = [20,20]| resolution of image.|
     |**im_range** = [np.nan, np.nan, np.nan, np.nan]| range of coordinates. If np.nan, min and max on each axis are computed from the diagrams.|
 
@@ -77,13 +77,13 @@ Currently available classes are:
     |**resolution** = 100| resolution of Betti curve.|
     |**bc_range** = [np.nan, np.nan]| range of x-coordinate. If np.nan, min and max on x-axis are computed from the diagrams.|
 
-  * **Slihouette**: implementation of [silhouettes](http://jocg.org/index.php/jocg/article/view/203).
+  * **Silhouette**: implementation of [silhouettes](http://jocg.org/index.php/jocg/article/view/203).
 
     Parameters:
 
     | **name** | **description** |
     | --- | --- |
-    |**power** = 1.0| power of silhouette.|
+    |**weight** = lambda x: 1| weight on diagram points. It is a python function.|
     |**resolution** = 100| resolution of silhouette.|
     |**range** = [np.nan, np.nan]| range of x-coordinate. If np.nan, min and max on x-axis are computed from the diagrams.|
 
@@ -105,7 +105,7 @@ Currently available classes are:
 
     | **name** | **description** |
     | --- | --- |
-    |**gaussian_bandwidth** = 1.0| bandwidth of kernel.|
+    |**bandwidth** = 1.0| bandwidth of kernel.|
 
   * **PersistenceWeightedGaussian**: implementation of [persistence weighted gaussian kernel](http://proceedings.mlr.press/v48/kusano16.html).
 
@@ -113,8 +113,8 @@ Currently available classes are:
 
     | **name** | **description** |
     | --- | --- |
-    |**kernel** | kernel on the plane to use. Can be a python function or a np.ndarray matrix.|
-    |**weight**| weight on diagram points. It is a python function.|
+    |**bandwidth** = 1.0 | Bandwidth of Gaussian kernel on the plane.|
+    |**weight** = lambda x: 1| weight on diagram points. It is a python function.|
     |**use_pss** = False| whether to add symmetric of points from the diagonal.|
 
   * **SlicedWasserstein**: implementation of [sliced Wasserstein kernel](http://proceedings.mlr.press/v70/carriere17a.html).
@@ -123,8 +123,8 @@ Currently available classes are:
 
     | **name** | **description** |
     | --- | --- |
-    |**N** = 10| number of directions.|
-    |**gaussian_bandwidth** = 1.0| bandwidth of kernel.|
+    |**num_directions** = 10| number of directions.|
+    |**bandwidth** = 1.0| bandwidth of kernel.|
 
 ### Metrics
 
@@ -136,16 +136,15 @@ Currently available classes are:
 
     | **name** | **description** |
     | --- | --- |
-    |**wasserstein_parameter** = 1| index of Wasserstein distance. Set to np.inf for bottleneck distance.|
+    |**wasserstein** = 1| index of Wasserstein distance. Set to np.inf for bottleneck distance.|
     |**delta** = 0.001| approximation error.|
 
 # Installing sklearn_tda
 
 The sklearn_tda library requires:
 
-* python [>=2.7]
+* python [>=2.7, >=3.5]
 * numpy [>= 1.8.2]
-* scipy [>= 0.13.3]
 * scikit-learn
 * cython (optional but strongly recommended)
 
@@ -175,4 +174,4 @@ Usage
 Sets of diagrams are represented as lists of 2D numpy arrays.
 All modules are standard scikit-learn modules: they have fit, transform and fit_transform methods.
 Hence, the most common way to use module X on a list of persistence diagrams D is to call X.fit_transform(D).
-Check the notebooks in the example folder for examples of computations.
+You can check [this python file](example/examples_of_computations.py) and [this notebook](data/3DSegTDA.ipynb) for examples of computations.

@@ -37,7 +37,7 @@ class Sliced_Wasserstein {
 
   }
 
-  Sliced_Wasserstein(const std::vector<std::pair<double, double> > & _diagram, double _sigma = 1.0, int _approx = 100){diagram = _diagram; approx = _approx; sigma = _sigma; build_rep();}
+  Sliced_Wasserstein(const std::vector<std::pair<double, double> > & _diagram, double _sigma, int _approx){diagram = _diagram; approx = _approx; sigma = _sigma; build_rep();}
 
   double compute_sliced_wasserstein_distance(const Sliced_Wasserstein & second) const {
 
