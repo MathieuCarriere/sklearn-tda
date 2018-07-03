@@ -174,4 +174,4 @@ Usage
 Sets of diagrams are represented as lists of 2D numpy arrays.
 All modules are standard scikit-learn modules: they have fit, transform and fit_transform methods.
 Hence, the most common way to use module X on a list of persistence diagrams D is to call X.fit_transform(D).
-You can check [this python file](example/examples_of_computations.py) and [this notebook](data/3DSegTDA.ipynb) for examples of computations.
+You can check [this python file](example/example_of_computations.py) and [this notebook](data/3DSegTDA.ipynb) for examples of computations.
