@@ -6,10 +6,8 @@ from .code import Landscape
 from .code import BettiCurve
 from .code import Silhouette
 from .code import TopologicalVector
-from .code import EssentialDiagramVectorizer
 
-from .code import FiniteSelector
-from .code import EssentialSelector
+from .code import DiagramSelector
 from .code import ProminentPoints
 from .code import DiagramPreprocessor
 from .code import BirthPersistenceTransform
@@ -26,10 +24,8 @@ __all__ = [
     "BettiCurve",
     "Silhouette"
     "TopologicalVector"
-    "EssentialDiagramVectorizer",
 
-    "FiniteSelector",
-    "EssentialSelector",
+    "DiagramSelector",
     "ProminentPoints",
     "DiagramPreprocessor",
     "BirthPersistenceTransform",

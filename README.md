@@ -30,17 +30,18 @@ Currently available classes are:
 
     | **name** | **description** |
     | --- | --- |
-    | **use** = False|     whether to use the class or not.
-    | **num_pts** = 10|  number of points to keep in each diagram (ordered by persistence). 
-    | **threshold** = -1|  points with distance-to-diagonal smaller than this parameter will be removed.
+    | **use** = False|     whether to use the class or not. |
+    | **num_pts** = 10|  number of points to keep in each diagram (ordered by persistence). |
+    | **threshold** = -1|  points with distance-to-diagonal smaller than this parameter will be removed. |
 
-  * **FiniteSelector** (resp. **EssentialSelector**): selects the finite (resp. essential) points of the diagrams.
+  * **DiagramSelector**: returns the finite or essential points of the diagrams.
 
      Parameters:
 
     | **name** | **description** |
     | --- | --- |
     | **limit** = np.inf | diagram points with ordinate equal to **limit** will be considered as essential. |
+    | **point_type** = "finite"| specifies the point type to return. Either "finite" or "essential". |
 
 ### Vectorizations
 
