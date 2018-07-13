@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
 """
-@author: Mathieu Carrière
+@author: Mathieu Carriere
 All rights reserved
 """
 
@@ -17,11 +16,10 @@ try:
     from hera_wasserstein import *
     from hera_bottleneck import *
     USE_CYTHON = True
-    print("Cython found")
 
 except ImportError:
     USE_CYTHON = False
-    print("Cython not found")
+    print("Cython not found--WassersteinDistance not available")
 
 #############################################
 # Preprocessing #############################

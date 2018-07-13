@@ -22,8 +22,8 @@ __all__ = [
     "PersistenceImage",
     "Landscape",
     "BettiCurve",
-    "Silhouette"
-    "TopologicalVector"
+    "Silhouette",
+    "TopologicalVector",
 
     "DiagramSelector",
     "ProminentPoints",
