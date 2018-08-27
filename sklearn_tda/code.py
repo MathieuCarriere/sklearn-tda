@@ -52,7 +52,7 @@ class CoverComplex(BaseEstimator, TransformerMixin):
 
         # Read input
 
-        self.cc.read_point_cloud(X)
+        self.cc.set_point_cloud_from_range(X)
 
         # Set color function
 
@@ -73,7 +73,7 @@ class CoverComplex(BaseEstimator, TransformerMixin):
                 if self.graph[2][2] == -1:
                     self.graph[2][2] = 0.001
                 self.cc.set_subsampling(self.graph[2][1], self.graph[2][2])
-                self.cc.set_graph_from_automatic_euclidean_rips(self.graph[2][0])
+                self.cc.set_graph_from_automatic_rips(self.graph[2][0])
             else:
                 self.cc.set_graph_from_euclidean_rips(self.graph[1])
 
@@ -117,17 +117,19 @@ class CoverComplex(BaseEstimator, TransformerMixin):
         if self.cover[0] == "Voronoi":
             self.cc.set_cover_from_Euclidean_Voronoi(self.cover[1])
 
+        return self
+
     def transform(self, X):
         self.cc.find_simplices()
-        return cc.create_simplex_tree()
+        return self.cc.create_simplex_tree()
 
     def print_result(self, output_type = "txt"):
         if output_type == "txt":
             self.cc.write_info()
         if output_type == "dot":
-            self.cc.plot_DOT()
+            self.cc.plot_dot()
         if output_type == "off":
-            self.cc.plot_OFF()
+            self.cc.plot_off()
 
     def compute_p_value(self, bootstrap = 10):
         self.cc.compute_distribution(bootstrap)
@@ -139,13 +141,13 @@ class CoverComplex(BaseEstimator, TransformerMixin):
 
     def compute_distance_from_confidence_level(self, bootstrap = 10, alpha = 0.1):
         self.cc.compute_distribution(bootstrap)
-        return compute_distance_from_confidence_level(alpha)
+        return self.cc.compute_distance_from_confidence_level(alpha)
 
     def subpopulation(self, node_index = 0):
         return self.cc.subpopulation(node_index)
 
     def persistence_diagram(self):
-        return self.compute_PD()
+        return self.cc.compute_PD()
 
 
 
