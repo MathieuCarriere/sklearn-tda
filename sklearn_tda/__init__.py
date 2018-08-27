@@ -18,6 +18,8 @@ from .code import PersistenceScaleSpace
 
 from .code import WassersteinDistance
 
+from .code import CoverComplex
+
 __all__ = [
     "PersistenceImage",
     "Landscape",
@@ -34,5 +36,7 @@ __all__ = [
     "PersistenceWeightedGaussian",
     "PersistenceScaleSpace",
 
-    "WassersteinDistance"
+    "WassersteinDistance",
+
+    "CoverComplex"
 ]
