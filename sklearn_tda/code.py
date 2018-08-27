@@ -21,6 +21,141 @@ except ImportError:
     USE_CYTHON = False
     print("Cython not found--WassersteinDistance not available")
 
+try:
+    import gudhi as gd
+    USE_GUDHI = True
+
+except ImportError:
+    USE_GUDHI = False
+    print("Gudhi not found--Mapper not available")
+
+#############################################
+# Clustering ################################
+#############################################
+
+class CoverComplex(BaseEstimator, TransformerMixin):
+
+    def __init__(self, type = "GIC", graph = ["neighborhood", -1, [100, -1, -1]], cover = ["functional", ["coordinate", 0], -1, -1],
+                       mask = 0, color = ["functional", ["coordinate", 0]], verbose = False):
+
+        if USE_GUDHI == False:
+            raise ImportError("Error: Gudhi not imported")
+        self.cc = gd.CoverComplex()
+        self.cc.set_type(type)
+        self.cc.set_mask(mask)
+        self.cc.set_verbose(verbose)
+        self.graph = graph
+        self.cover = cover
+        self.color = color
+
+    def fit(self, X, y = None):
+
+        # Read input
+
+        self.cc.read_point_cloud(X)
+
+        # Set color function
+
+        if self.color[1][0] == "coordinate":
+            self.cc.set_color_from_coordinate(self.color[1][1])
+        if self.color[1][0] == "range":
+            self.cc.set_color_from_range(self.color[1][1])
+        if self.color[1][0] == "file":
+            self.cc.set_color_from_file(self.color[1][1])
+
+        # Set underlying graph for connected components
+
+        ### Neighborhood graph
+        if self.graph[0] == "neighborhood":
+            if self.graph[1] == -1:
+                if self.graph[2][1] == -1:
+                    self.graph[2][1] = 10
+                if self.graph[2][2] == -1:
+                    self.graph[2][2] = 0.001
+                self.cc.set_subsampling(self.graph[2][1], self.graph[2][2])
+                self.cc.set_graph_from_automatic_euclidean_rips(self.graph[2][0])
+            else:
+                self.cc.set_graph_from_euclidean_rips(self.graph[1])
+
+        ### File
+        if self.graph[0] == "file":
+            self.cc.set_graph_from_file(self.graph[1])
+
+        # Set cover of point cloud
+
+        ### Preimages of range of function
+        if self.cover[0] == "functional":
+
+            ###### Function values
+            if self.cover[1][0] == "coordinate":
+                self.cc.set_function_from_coordinate(self.cover[1][1])
+            if self.cover[1][0] == "range":
+                self.cc.set_function_from_range(self.cover[1][1])
+            if self.cover[1][0] == "file":
+                self.cc.set_function_from_file(self.cover[1][1])
+            ###### Gain
+            if self.cover[2] == -1:
+                self.cc.set_gain()
+            else:
+                self.cc.set_gain(self.cover[2])
+            ###### Resolution
+            if self.cover[3] == -1:
+                self.cc.set_automatic_resolution()
+            else:
+                if type(self.cover[3]) is int:
+                    self.cc.set_resolution_with_interval_number(self.cover[3])
+                else:
+                    self.cc.set_resolution_with_interval_length(self.cover[3])
+            ###### Cover computation
+            self.cc.set_cover_from_function()
+
+        ### File
+        if self.cover[0] == "file":
+            self.cc.set_cover_from_file(self.cover[1])
+
+        ### Voronoi cells with Dijkstra
+        if self.cover[0] == "Voronoi":
+            self.cc.set_cover_from_Euclidean_Voronoi(self.cover[1])
+
+    def transform(self, X):
+        self.cc.find_simplices()
+        return cc.create_simplex_tree()
+
+    def print_result(self, output_type = "txt"):
+        if output_type == "txt":
+            self.cc.write_info()
+        if output_type == "dot":
+            self.cc.plot_DOT()
+        if output_type == "off":
+            self.cc.plot_OFF()
+
+    def compute_p_value(self, bootstrap = 10):
+        self.cc.compute_distribution(bootstrap)
+        return self.cc.compute_p_value()
+
+    def compute_confidence_level_from_distance(self, bootstrap = 10, distance = 1.0):
+        self.cc.compute_distribution(bootstrap)
+        return self.cc.compute_confidence_level_from_distance(distance)
+
+    def compute_distance_from_confidence_level(self, bootstrap = 10, alpha = 0.1):
+        self.cc.compute_distribution(bootstrap)
+        return compute_distance_from_confidence_level(alpha)
+
+    def subpopulation(self, node_index = 0):
+        return self.cc.subpopulation(node_index)
+
+    def persistence_diagram(self):
+        return self.compute_PD()
+
+
+
+
+
+
+
+
+
+
 #############################################
 # Preprocessing #############################
 #############################################
