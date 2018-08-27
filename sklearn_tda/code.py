@@ -11,10 +11,10 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.neighbors     import DistanceMetric
 
 try:
-    from vectors import *
-    from kernels import *
-    from hera_wasserstein import *
-    from hera_bottleneck import *
+    from .vectors import *
+    from .kernels import *
+    from .hera_wasserstein import *
+    from .hera_bottleneck import *
     USE_CYTHON = True
 
 except ImportError:
