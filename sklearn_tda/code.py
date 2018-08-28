@@ -35,17 +35,20 @@ except ImportError:
 
 class CoverComplex(BaseEstimator, TransformerMixin):
 
-    def __init__(self, type = "GIC", graph = ["neighborhood", -1, [100, -1, -1]], cover = ["functional", ["coordinate", 0], -1, -1],
-                       mask = 0, color = ["functional", ["coordinate", 0]], verbose = False):
+    def __init__(self, type = "GIC",
+                       graph = -1, graph_subsampling = 100, graph_subsampling_power = 0.001, graph_subsampling_constant = 10,
+                       cover = "functional", filter = 0, resolution = -1, gain = 0.33, voronoi_subsampling = 100,
+                       mask = 0, color = 0, verbose = False):
 
         if USE_GUDHI == False:
             raise ImportError("Error: Gudhi not imported")
+
         self.cc = gd.CoverComplex()
         self.cc.set_type(type)
         self.cc.set_mask(mask)
         self.cc.set_verbose(verbose)
-        self.graph = graph
-        self.cover = cover
+        self.graph, self.graph_subsampling, self.graph_subsampling_constant, self.graph_subsampling_power = graph, graph_subsampling, graph_subsampling_constant, graph_subsampling_power
+        self.cover, self.filter, self.resolution, self.gain, self.voronoi_subsampling = cover, filter, resolution, gain, voronoi_subsampling
         self.color = color
 
     def fit(self, X, y = None):
@@ -56,66 +59,60 @@ class CoverComplex(BaseEstimator, TransformerMixin):
 
         # Set color function
 
-        if self.color[1][0] == "coordinate":
-            self.cc.set_color_from_coordinate(self.color[1][1])
-        if self.color[1][0] == "range":
-            self.cc.set_color_from_range(self.color[1][1])
-        if self.color[1][0] == "file":
-            self.cc.set_color_from_file(self.color[1][1])
+        if type(self.color) is int:
+            self.cc.set_color_from_coordinate(self.color)
+        if type(self.color) is np.ndarray:
+            self.cc.set_color_from_range(self.color)
+        if type(self.color) is str:
+            self.cc.set_color_from_file(self.color)
 
         # Set underlying graph for connected components
 
-        ### Neighborhood graph
-        if self.graph[0] == "neighborhood":
-            if self.graph[1] == -1:
-                if self.graph[2][1] == -1:
-                    self.graph[2][1] = 10
-                if self.graph[2][2] == -1:
-                    self.graph[2][2] = 0.001
-                self.cc.set_subsampling(self.graph[2][1], self.graph[2][2])
-                self.cc.set_graph_from_automatic_rips(self.graph[2][0])
-            else:
-                self.cc.set_graph_from_euclidean_rips(self.graph[1])
-
         ### File
-        if self.graph[0] == "file":
-            self.cc.set_graph_from_file(self.graph[1])
+        if type(self.graph) is str:
+            self.cc.set_graph_from_file(self.graph)
+
+        ### Neighborhood graph
+        else:
+            if self.graph == -1:
+                self.cc.set_subsampling(self.graph_subsampling_constant, self.graph_subsampling_power)
+                self.cc.set_graph_from_automatic_rips(self.graph_subsampling)
+            else:
+                self.cc.set_graph_from_rips(self.graph)
 
         # Set cover of point cloud
 
-        ### Preimages of range of function
-        if self.cover[0] == "functional":
+        if self.cover == "functional" or self.cover == "Voronoi":
 
-            ###### Function values
-            if self.cover[1][0] == "coordinate":
-                self.cc.set_function_from_coordinate(self.cover[1][1])
-            if self.cover[1][0] == "range":
-                self.cc.set_function_from_range(self.cover[1][1])
-            if self.cover[1][0] == "file":
-                self.cc.set_function_from_file(self.cover[1][1])
-            ###### Gain
-            if self.cover[2] == -1:
-                self.cc.set_gain()
-            else:
-                self.cc.set_gain(self.cover[2])
-            ###### Resolution
-            if self.cover[3] == -1:
-                self.cc.set_automatic_resolution()
-            else:
-                if type(self.cover[3]) is int:
-                    self.cc.set_resolution_with_interval_number(self.cover[3])
+            ### Preimages of range of function
+            if self.cover == "functional":
+                ###### Function values
+                if type(self.filter) is int:
+                    self.cc.set_function_from_coordinate(self.filter)
+                if type(self.filter) is np.ndarray:
+                    self.cc.set_function_from_range(self.filter)
+                if type(self.filter) is str:
+                    self.cc.set_function_from_file(self.filter)
+                ###### Gain
+                self.cc.set_gain(self.gain)
+                ###### Resolution
+                if self.resolution == -1:
+                    self.cc.set_automatic_resolution()
                 else:
-                    self.cc.set_resolution_with_interval_length(self.cover[3])
-            ###### Cover computation
-            self.cc.set_cover_from_function()
+                    if type(self.resolution) is int:
+                        self.cc.set_resolution_with_interval_number(self.resolution)
+                    else:
+                        self.cc.set_resolution_with_interval_length(self.resolution)
+                ###### Cover computation
+                self.cc.set_cover_from_function()
+
+            ### Voronoi cells with Dijkstra
+            if self.cover == "Voronoi":
+                self.cc.set_cover_from_Voronoi(self.voronoi_subsampling)
 
         ### File
-        if self.cover[0] == "file":
-            self.cc.set_cover_from_file(self.cover[1])
-
-        ### Voronoi cells with Dijkstra
-        if self.cover[0] == "Voronoi":
-            self.cc.set_cover_from_Euclidean_Voronoi(self.cover[1])
+        else:
+            self.cc.set_cover_from_file(self.cover)
 
         return self
 
