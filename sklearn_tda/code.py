@@ -33,11 +33,13 @@ except ImportError:
 # Clustering ################################
 #############################################
 
+
+
 class CoverComplex(BaseEstimator, TransformerMixin):
 
     def __init__(self, type = "GIC",
                        graph = -1, graph_subsampling = 100, graph_subsampling_power = 0.001, graph_subsampling_constant = 10,
-                       cover = "functional", filter = 0, resolution = -1, gain = 0.33, voronoi_subsampling = 100,
+                       filter = 0, resolution = -1, gain = 0.33,
                        mask = 0, color = 0, verbose = False):
 
         if USE_GUDHI == False:
@@ -48,71 +50,47 @@ class CoverComplex(BaseEstimator, TransformerMixin):
         self.cc.set_mask(mask)
         self.cc.set_verbose(verbose)
         self.graph, self.graph_subsampling, self.graph_subsampling_constant, self.graph_subsampling_power = graph, graph_subsampling, graph_subsampling_constant, graph_subsampling_power
-        self.cover, self.filter, self.resolution, self.gain, self.voronoi_subsampling = cover, filter, resolution, gain, voronoi_subsampling
+        self.filter, self.resolution, self.gain = filter, resolution, gain
         self.color = color
 
     def fit(self, X, y = None):
 
         # Read input
-
         self.cc.set_point_cloud_from_range(X)
 
         # Set color function
-
         if type(self.color) is int:
             self.cc.set_color_from_coordinate(self.color)
         if type(self.color) is np.ndarray:
             self.cc.set_color_from_range(self.color)
-        if type(self.color) is str:
-            self.cc.set_color_from_file(self.color)
 
         # Set underlying graph for connected components
-
-        ### File
-        if type(self.graph) is str:
-            self.cc.set_graph_from_file(self.graph)
-
         ### Neighborhood graph
+        if self.graph == -1:
+            self.cc.set_subsampling(self.graph_subsampling_constant, self.graph_subsampling_power)
+            self.cc.set_graph_from_automatic_rips(self.graph_subsampling)
         else:
-            if self.graph == -1:
-                self.cc.set_subsampling(self.graph_subsampling_constant, self.graph_subsampling_power)
-                self.cc.set_graph_from_automatic_rips(self.graph_subsampling)
-            else:
-                self.cc.set_graph_from_rips(self.graph)
+            self.cc.set_graph_from_rips(self.graph)
 
         # Set cover of point cloud
-
-        if self.cover == "functional" or self.cover == "Voronoi":
-
-            ### Preimages of range of function
-            if self.cover == "functional":
-                ###### Function values
-                if type(self.filter) is int:
-                    self.cc.set_function_from_coordinate(self.filter)
-                if type(self.filter) is np.ndarray:
-                    self.cc.set_function_from_range(self.filter)
-                if type(self.filter) is str:
-                    self.cc.set_function_from_file(self.filter)
-                ###### Gain
-                self.cc.set_gain(self.gain)
-                ###### Resolution
-                if self.resolution == -1:
-                    self.cc.set_automatic_resolution()
-                else:
-                    if type(self.resolution) is int:
-                        self.cc.set_resolution_with_interval_number(self.resolution)
-                    else:
-                        self.cc.set_resolution_with_interval_length(self.resolution)
-                ###### Cover computation
-                self.cc.set_cover_from_function()
-
-            ### Voronoi cells with Dijkstra
-            if self.cover == "Voronoi":
-                self.cc.set_cover_from_Voronoi(self.voronoi_subsampling)
-
-        ### File
+        ### Preimages of range of function
+        ###### Function values
+        if type(self.filter) is int:
+            self.cc.set_function_from_coordinate(self.filter)
+        if type(self.filter) is np.ndarray:
+            self.cc.set_function_from_range(self.filter)
+        ###### Gain
+        self.cc.set_gain(self.gain)
+        ###### Resolution
+        if self.resolution == -1:
+            self.cc.set_automatic_resolution()
         else:
-            self.cc.set_cover_from_file(self.cover)
+            if type(self.resolution) is int:
+                self.cc.set_resolution_with_interval_number(self.resolution)
+            else:
+                self.cc.set_resolution_with_interval_length(self.resolution)
+        ###### Cover computation
+        self.cc.set_cover_from_function()
 
         return self
 
