@@ -5,10 +5,13 @@ All rights reserved
 
 import sys
 import numpy as np
+import itertools
+import matplotlib.cm as cm
 
 from sklearn.base          import BaseEstimator, TransformerMixin
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.neighbors     import DistanceMetric
+from sklearn.cluster       import DBSCAN
 
 try:
     from .vectors import *
@@ -33,24 +36,100 @@ except ImportError:
 # Clustering ################################
 #############################################
 
+class MapperComplex(BaseEstimator, TransformerMixin):
+
+    def __init__(self, filters, resolutions, gains, color, clustering = DBSCAN(), epsilon = 1e-5):
+        self.filters, self.resolutions, self.gains, self.color, self.clustering = filters, resolutions, gains, color, clustering
+        self.epsilon = epsilon
+
+    def fit(self, X, y = None):
+
+        num_filters = self.filters.shape[1]
+        interval_inds, intersec_inds = np.empty(self.filters.shape), np.empty(self.filters.shape)
+        for i in range(num_filters):
+            f, r, g = self.filters[:,i], self.resolutions[i], self.gains[i]
+            min_f, max_f = np.min(f), np.max(f)
+            interval_endpoints, l = np.linspace(min_f - self.epsilon, max_f + self.epsilon, num = r+1, retstep = True)
+            intersec_endpoints = []
+            for j in range(1, len(interval_endpoints)-1):
+                intersec_endpoints.append(interval_endpoints[j] - g*l / (2 - 2*g))
+                intersec_endpoints.append(interval_endpoints[j] + g*l / (2 - 2*g))
+            interval_inds[:,i] = np.digitize(f, interval_endpoints)
+            intersec_inds[:,i] = 0.5 * (np.digitize(f, intersec_endpoints) + 1)
+
+        num_pts = self.filters.shape[0]
+        binned_data = dict()
+        for i in range(num_pts):
+            list_preimage = []
+            for j in range(num_filters):
+                a, b = interval_inds[i,j], intersec_inds[i,j]
+                list_preimage.append([a])
+                if b == a:
+                    list_preimage[j].append(a+1)
+                if b == a-1:
+                    list_preimage[j].append(a-1)
+            list_preimage = list(itertools.product(*list_preimage))
+            for pre_idx in list_preimage:
+                if pre_idx in binned_data:
+                    binned_data[pre_idx].append(i)
+                else:
+                    binned_data[pre_idx] = [i]
+
+        cover = []
+        for i in range(num_pts):
+            cover.append([])
+
+        clus_base, clus_color, clus_size = 0, dict(), dict()
+        for preimage in binned_data:
+
+            idxs = np.array(binned_data[preimage])
+            clusters = self.clustering.fit_predict(X[idxs,:])
+
+            num_clus_pre = np.max(clusters) + 1
+            for i in range(num_clus_pre):
+                subpopulation = idxs[clusters == i]
+                color_val = np.mean(self.color[subpopulation])
+                clus_color[clus_base + i] = color_val
+                clus_size[clus_base + i] = len(subpopulation)
+
+            for i in range(clusters.shape[0]):
+                cover[idxs[i]].append(clus_base + clusters[i])
+
+            clus_base += np.max(clusters) + 1
+
+        self.st_ = gd.SimplexTree()
+        for i in range(num_pts):
+            num_clus_i = len(cover[i])
+            for j in range(num_clus_i):
+                self.st_.insert([cover[i][j]])
+            self.st_.insert(cover[i])
+
+        self.graph_ = []
+        for simplex in self.st_.get_skeleton(2):
+            if len(simplex[0]) > 1:
+                self.graph_.append([simplex[0], simplex[1]])
+            else:
+                clus_idx = simplex[0][0]
+                self.graph_.append([simplex[0], clus_color[clus_idx], clus_size[clus_idx]])
+
+        return self
 
 
-class CoverComplex(BaseEstimator, TransformerMixin):
+class GraphInducedComplex(BaseEstimator, TransformerMixin):
 
-    def __init__(self, type = "GIC",
-                       graph = -1, graph_subsampling = 100, graph_subsampling_power = 0.001, graph_subsampling_constant = 10,
-                       filter = 0, resolution = -1, gain = 0.33,
+    def __init__(self, graph = -1, graph_subsampling = 100, graph_subsampling_power = 0.001, graph_subsampling_constant = 10,
+                       cover_type = "functional", filter = 0, resolution = -1, gain = 0.33, Voronoi_subsampling = 1000,
                        mask = 0, color = 0, verbose = False):
 
         if USE_GUDHI == False:
             raise ImportError("Error: Gudhi not imported")
 
         self.cc = gd.CoverComplex()
-        self.cc.set_type(type)
+        self.cc.set_type("GIC")
         self.cc.set_mask(mask)
         self.cc.set_verbose(verbose)
         self.graph, self.graph_subsampling, self.graph_subsampling_constant, self.graph_subsampling_power = graph, graph_subsampling, graph_subsampling_constant, graph_subsampling_power
-        self.filter, self.resolution, self.gain = filter, resolution, gain
+        self.filter, self.resolution, self.gain, self.Voronoi_subsampling = filter, resolution, gain, Voronoi_subsampling
         self.color = color
 
     def fit(self, X, y = None):
@@ -64,8 +143,7 @@ class CoverComplex(BaseEstimator, TransformerMixin):
         if type(self.color) is np.ndarray:
             self.cc.set_color_from_range(self.color)
 
-        # Set underlying graph for connected components
-        ### Neighborhood graph
+        # Set underlying neighborhood graph for connected components
         if self.graph == -1:
             self.cc.set_subsampling(self.graph_subsampling_constant, self.graph_subsampling_power)
             self.cc.set_graph_from_automatic_rips(self.graph_subsampling)
@@ -73,30 +151,32 @@ class CoverComplex(BaseEstimator, TransformerMixin):
             self.cc.set_graph_from_rips(self.graph)
 
         # Set cover of point cloud
-        ### Preimages of range of function
-        ###### Function values
-        if type(self.filter) is int:
-            self.cc.set_function_from_coordinate(self.filter)
-        if type(self.filter) is np.ndarray:
-            self.cc.set_function_from_range(self.filter)
-        ###### Gain
-        self.cc.set_gain(self.gain)
-        ###### Resolution
-        if self.resolution == -1:
-            self.cc.set_automatic_resolution()
-        else:
-            if type(self.resolution) is int:
-                self.cc.set_resolution_with_interval_number(self.resolution)
+        if cover_type == "functional":
+            ###### Function values
+            if type(self.filter) is int:
+                self.cc.set_function_from_coordinate(self.filter)
+            if type(self.filter) is np.ndarray:
+                self.cc.set_function_from_range(self.filter)
+            ###### Gain
+            self.cc.set_gain(self.gain)
+            ###### Resolution
+            if self.resolution == -1:
+                self.cc.set_automatic_resolution()
             else:
-                self.cc.set_resolution_with_interval_length(self.resolution)
-        ###### Cover computation
-        self.cc.set_cover_from_function()
+                if type(self.resolution) is int:
+                    self.cc.set_resolution_with_interval_number(self.resolution)
+                else:
+                    self.cc.set_resolution_with_interval_length(self.resolution)
+            ###### Cover computation
+            self.cc.set_cover_from_function()
+        if cover_type == "Voronoi":
+            self.cc.set_cover_from_Voronoi(self.Voronoi_subsampling)
+
+        # Compute simplices
+        self.cc.find_simplices()
+        self.cc.create_simplex_tree()
 
         return self
-
-    def transform(self, X):
-        self.cc.find_simplices()
-        return self.cc.create_simplex_tree()
 
     def print_result(self, output_type = "txt"):
         if output_type == "txt":
