@@ -30,7 +30,7 @@ try:
 
 except ImportError:
     USE_GUDHI = False
-    print("Gudhi not found--Mapper not available")
+    print("Gudhi not found--GraphInducedComplex not available")
 
 #############################################
 # Clustering ################################
@@ -38,9 +38,9 @@ except ImportError:
 
 class MapperComplex(BaseEstimator, TransformerMixin):
 
-    def __init__(self, filters, resolutions, gains, color, clustering = DBSCAN(), epsilon = 1e-5):
+    def __init__(self, filters, resolutions, gains, color, clustering = DBSCAN(), epsilon = 1e-5, verbose = False):
         self.filters, self.resolutions, self.gains, self.color, self.clustering = filters, resolutions, gains, color, clustering
-        self.epsilon = epsilon
+        self.epsilon, self.verbose = epsilon, verbose
 
     def fit(self, X, y = None):
 
@@ -75,6 +75,9 @@ class MapperComplex(BaseEstimator, TransformerMixin):
                 else:
                     binned_data[pre_idx] = [i]
 
+        if self.verbose:
+            print(binned_data)
+
         cover = []
         for i in range(num_pts):
             cover.append([])
@@ -85,6 +88,9 @@ class MapperComplex(BaseEstimator, TransformerMixin):
             idxs = np.array(binned_data[preimage])
             clusters = self.clustering.fit_predict(X[idxs,:])
 
+            if self.verbose:
+                print("clusters in preimage " + str(preimage) + " = " + str(clusters))
+
             num_clus_pre = np.max(clusters) + 1
             for i in range(num_clus_pre):
                 subpopulation = idxs[clusters == i]
@@ -93,7 +99,8 @@ class MapperComplex(BaseEstimator, TransformerMixin):
                 clus_size[clus_base + i] = len(subpopulation)
 
             for i in range(clusters.shape[0]):
-                cover[idxs[i]].append(clus_base + clusters[i])
+                if clusters[i] != -1:
+                    cover[idxs[i]].append(clus_base + clusters[i])
 
             clus_base += np.max(clusters) + 1
 
@@ -106,8 +113,9 @@ class MapperComplex(BaseEstimator, TransformerMixin):
 
         self.graph_ = []
         for simplex in self.st_.get_skeleton(2):
+            print(simplex)
             if len(simplex[0]) > 1:
-                self.graph_.append([simplex[0], simplex[1]])
+                self.graph_.append([simplex[0]])
             else:
                 clus_idx = simplex[0][0]
                 self.graph_.append([simplex[0], clus_color[clus_idx], clus_size[clus_idx]])
