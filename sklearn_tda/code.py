@@ -137,7 +137,7 @@ class GraphInducedComplex(BaseEstimator, TransformerMixin):
         self.cc.set_mask(mask)
         self.cc.set_verbose(verbose)
         self.graph, self.graph_subsampling, self.graph_subsampling_constant, self.graph_subsampling_power = graph, graph_subsampling, graph_subsampling_constant, graph_subsampling_power
-        self.filter, self.resolution, self.gain, self.Voronoi_subsampling = filter, resolution, gain, Voronoi_subsampling
+        self.cover_type, self.filter, self.resolution, self.gain, self.Voronoi_subsampling = cover_type, filter, resolution, gain, Voronoi_subsampling
         self.color = color
 
     def fit(self, X, y = None):
@@ -159,7 +159,7 @@ class GraphInducedComplex(BaseEstimator, TransformerMixin):
             self.cc.set_graph_from_rips(self.graph)
 
         # Set cover of point cloud
-        if cover_type == "functional":
+        if self.cover_type == "functional":
             ###### Function values
             if type(self.filter) is int:
                 self.cc.set_function_from_coordinate(self.filter)
@@ -177,7 +177,7 @@ class GraphInducedComplex(BaseEstimator, TransformerMixin):
                     self.cc.set_resolution_with_interval_length(self.resolution)
             ###### Cover computation
             self.cc.set_cover_from_function()
-        if cover_type == "Voronoi":
+        if self.cover_type == "Voronoi":
             self.cc.set_cover_from_Voronoi(self.Voronoi_subsampling)
 
         # Compute simplices
