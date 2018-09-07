@@ -38,9 +38,9 @@ except ImportError:
 
 class MapperComplex(BaseEstimator, TransformerMixin):
 
-    def __init__(self, filters, resolutions, gains, color, clustering = DBSCAN(), epsilon = 1e-5, verbose = False):
+    def __init__(self, filters, resolutions, gains, color, clustering = DBSCAN(), mask = 0, verbose = False):
         self.filters, self.resolutions, self.gains, self.color, self.clustering = filters, resolutions, gains, color, clustering
-        self.epsilon, self.verbose = epsilon, verbose
+        self.mask, self.verbose = mask, verbose
 
     def fit(self, X, y = None):
 
@@ -49,13 +49,17 @@ class MapperComplex(BaseEstimator, TransformerMixin):
         for i in range(num_filters):
             f, r, g = self.filters[:,i], self.resolutions[i], self.gains[i]
             min_f, max_f = np.min(f), np.max(f)
-            interval_endpoints, l = np.linspace(min_f - self.epsilon, max_f + self.epsilon, num = r+1, retstep = True)
+            epsilon = pow(10, np.log10(abs(max_f)) - 5)
+            interval_endpoints, l = np.linspace(min_f - epsilon, max_f + epsilon, num = r+1, retstep = True)
             intersec_endpoints = []
             for j in range(1, len(interval_endpoints)-1):
                 intersec_endpoints.append(interval_endpoints[j] - g*l / (2 - 2*g))
                 intersec_endpoints.append(interval_endpoints[j] + g*l / (2 - 2*g))
             interval_inds[:,i] = np.digitize(f, interval_endpoints)
             intersec_inds[:,i] = 0.5 * (np.digitize(f, intersec_endpoints) + 1)
+            if self.verbose:
+                print(interval_inds[:,i])
+                print(intersec_inds[:,i])
 
         num_pts = self.filters.shape[0]
         binned_data = dict()
@@ -115,10 +119,13 @@ class MapperComplex(BaseEstimator, TransformerMixin):
         for simplex in self.st_.get_skeleton(2):
             print(simplex)
             if len(simplex[0]) > 1:
-                self.graph_.append([simplex[0]])
+                idx1, idx2 = simplex[0][0], simplex[0][1]
+                if self.mask <= idx1 and self.mask <= idx2:
+                    self.graph_.append([simplex[0]])
             else:
                 clus_idx = simplex[0][0]
-                self.graph_.append([simplex[0], clus_color[clus_idx], clus_size[clus_idx]])
+                if self.mask <= clus_size[clus_idx]:
+                    self.graph_.append([simplex[0], clus_color[clus_idx], clus_size[clus_idx]])
 
         return self
 
