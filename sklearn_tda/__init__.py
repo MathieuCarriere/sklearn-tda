@@ -1,7 +1,10 @@
 name = "sklearn_tda"
 version__ = 0
 
-from .code import *
+from .preprocessing import *
+from .kernel_methods import *
+from .vector_methods import *
+from .metrics import *
 
 __all__ = [
     "PersistenceImage",
