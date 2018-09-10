@@ -19,12 +19,13 @@ __all__ = [
     "DiagramPreprocessor",
     "BirthPersistenceTransform",
 
-    "SlicedWasserstein",
-    "PersistenceWeightedGaussian",
-    "PersistenceScaleSpace",
+    "SlicedWassersteinKernel",
+    "PersistenceWeightedGaussianKernel",
+    "PersistenceScaleSpaceKernel",
 
     "WassersteinDistance",
+    "SlicedWassersteinDistance",
 
-    "MapperComplex"
+    "MapperComplex",
     "GraphInducedComplex"
 ]

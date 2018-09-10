@@ -140,6 +140,14 @@ Currently available classes are:
     |**wasserstein** = 1| index of Wasserstein distance. Set to np.inf for bottleneck distance.|
     |**delta** = 0.001| approximation error.|
 
+  * **SlicedWassersteinDistance**: implementation of [sliced Wasserstein distance](http://proceedings.mlr.press/v70/carriere17a.html). **Requires cython!!**
+
+    Parameters:
+
+    | **name** | **description** |
+    | --- | --- |
+    |**num_directions** = 10| number of directions.|
+
 # Installing sklearn_tda
 
 The sklearn_tda library requires:

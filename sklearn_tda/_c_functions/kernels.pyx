@@ -14,12 +14,16 @@ cdef extern from "wrapper_class.h":
         WeightWrapper(object)
 
 cdef extern from "kernels/Kernels_interface.h":
-    vector[vector[double]] sw_matrix     (vector[vector[pair[double, double]]],  vector[vector[pair[double, double]]],  double, int)
-    vector[vector[double]] pwg_matrix    (vector[vector[pair[double, double]]],  vector[vector[pair[double, double]]],  double, WeightWrapper)
+    vector[vector[double]] swk_matrix     (vector[vector[pair[double, double]]],  vector[vector[pair[double, double]]],  double, int)
+    vector[vector[double]] sw_matrix      (vector[vector[pair[double, double]]],  vector[vector[pair[double, double]]],  int)
+    vector[vector[double]] pwgk_matrix    (vector[vector[pair[double, double]]],  vector[vector[pair[double, double]]],  double, WeightWrapper)
 
-def sliced_wasserstein_matrix(diagrams_1, diagrams_2, sigma, N):
-    return sw_matrix(diagrams_1, diagrams_2, sigma, N)
+def sliced_wasserstein_kernel_matrix(diagrams_1, diagrams_2, sigma, N):
+    return swk_matrix(diagrams_1, diagrams_2, sigma, N)
 
-def persistence_weighted_gaussian_matrix(diagrams_1, diagrams_2, sigma, weight):
+def sliced_wasserstein_matrix(diagrams_1, diagrams_2, N):
+    return sw_matrix(diagrams_1, diagrams_2, N)
+
+def persistence_weighted_gaussian_kernel_matrix(diagrams_1, diagrams_2, sigma, weight):
     cdef WeightWrapper w = WeightWrapper(weight)
-    return pwg_matrix(diagrams_1, diagrams_2, sigma, w)
+    return pwgk_matrix(diagrams_1, diagrams_2, sigma, w)
