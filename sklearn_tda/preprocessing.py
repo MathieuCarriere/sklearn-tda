@@ -52,10 +52,11 @@ class DiagramPreprocessor(BaseEstimator, TransformerMixin):
 
 class ProminentPoints(BaseEstimator, TransformerMixin):
 
-    def __init__(self, use = False, num_pts = 10, threshold = -1):
+    def __init__(self, use = False, num_pts = 10, threshold = -1, point_type = "upper"):
         self.num_pts    = num_pts
         self.threshold  = threshold
         self.use        = use
+        self.point_type = point_type
 
     def fit(self, X, y = None):
         return self
@@ -70,8 +71,11 @@ class ProminentPoints(BaseEstimator, TransformerMixin):
                     idx_thresh = pers >= self.threshold
                     thresh_diag, thresh_pers  = diag[idx_thresh.flatten()], pers[idx_thresh.flatten()]
                     sort_index  = np.flip(np.argsort(thresh_pers, axis = None),0)
-                    sorted_diag = thresh_diag[sort_index[:min(self.num_pts, diag.shape[0])],:]
-                    Xfit.append(sorted_diag)
+                    if self.point_type == "upper":
+                        new_diag = thresh_diag[sort_index[:min(self.num_pts, thresh_diag.shape[0])],:]
+                    if self.point_type == "lower":
+                        new_diag = np.concatenate( [ thresh_diag[sort_index[min(self.num_pts, thresh_diag.shape[0]):],:], diag[~idx_thresh.flatten()] ], axis = 0)
+                    Xfit.append(new_diag)
                 else:
                     Xfit.append(diag)
         else:
