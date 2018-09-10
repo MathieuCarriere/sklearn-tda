@@ -31,8 +31,10 @@ Currently available classes are:
     | **name** | **description** |
     | --- | --- |
     | **use** = False|     whether to use the class or not. |
-    | **num_pts** = 10|  number of points to keep in each diagram (ordered by persistence). |
-    | **threshold** = -1|  points with distance-to-diagonal smaller than this parameter will be removed. |
+    | **num_pts** = 10|    cardinality threshold (points are ordered by persistence). |
+    | **threshold** = -1|  distance-to-diagonal threshold. |
+    | **point_type** = "upper"|  whether to keep the points above ("upper") or below ("lower") the aforementioned thresholds. |
+    
 
   * **DiagramSelector**: returns the finite or essential points of the diagrams.
 
