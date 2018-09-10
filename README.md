@@ -100,7 +100,7 @@ Currently available classes are:
 
 Currently available classes are:
 
-  * **PersistenceScaleSpace**: implementation of [persistence scale space kernel](https://www.cv-foundation.org/openaccess/content_cvpr_2015/papers/Reininghaus_A_Stable_Multi-Scale_2015_CVPR_paper.pdf).
+  * **PersistenceScaleSpace**: implementation of [persistence scale space kernel](https://www.cv-foundation.org/openaccess/content_cvpr_2015/papers/Reininghaus_A_Stable_Multi-Scale_2015_CVPR_paper.pdf). **Requires cython!!**
 
     Parameters:
 
@@ -108,7 +108,7 @@ Currently available classes are:
     | --- | --- |
     |**bandwidth** = 1.0| bandwidth of kernel.|
 
-  * **PersistenceWeightedGaussian**: implementation of [persistence weighted gaussian kernel](http://proceedings.mlr.press/v48/kusano16.html).
+  * **PersistenceWeightedGaussian**: implementation of [persistence weighted gaussian kernel](http://proceedings.mlr.press/v48/kusano16.html). **Requires cython!!**
 
     Parameters:
 
@@ -118,7 +118,7 @@ Currently available classes are:
     |**weight** = lambda x: 1| weight on diagram points. It is a python function.|
     |**use_pss** = False| whether to add symmetric of points from the diagonal.|
 
-  * **SlicedWasserstein**: implementation of [sliced Wasserstein kernel](http://proceedings.mlr.press/v70/carriere17a.html).
+  * **SlicedWasserstein**: implementation of [sliced Wasserstein kernel](http://proceedings.mlr.press/v70/carriere17a.html). **Requires cython!!**
 
     Parameters:
 
