@@ -118,7 +118,7 @@ class GraphInducedComplex(BaseEstimator, TransformerMixin):
 
     def __init__(self, graph = -1, graph_subsampling = 100, graph_subsampling_power = 0.001, graph_subsampling_constant = 10,
                        cover_type = "functional", filter = 0, resolution = -1, gain = 0.33, Voronoi_subsampling = 1000,
-                       mask = 0, color = 0, verbose = False):
+                       mask = 0, color = 0, verbose = False, input = "point cloud"):
 
         if USE_GUDHI == False:
             raise ImportError("Error: Gudhi not imported")
@@ -129,12 +129,15 @@ class GraphInducedComplex(BaseEstimator, TransformerMixin):
         self.cc.set_verbose(verbose)
         self.graph, self.graph_subsampling, self.graph_subsampling_constant, self.graph_subsampling_power = graph, graph_subsampling, graph_subsampling_constant, graph_subsampling_power
         self.cover_type, self.filter, self.resolution, self.gain, self.Voronoi_subsampling = cover_type, filter, resolution, gain, Voronoi_subsampling
-        self.color = color
+        self.color, self.input = color, input
 
     def fit(self, X, y = None):
 
         # Read input
-        self.cc.set_point_cloud_from_range(X)
+        if self.input == "point cloud":
+            self.cc.set_point_cloud_from_range(X)
+        elif self.input == "distance matrix":
+            self.cc.set_distances_from_range(X)
 
         # Set color function
         if type(self.color) is int:
