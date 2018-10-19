@@ -19,7 +19,10 @@ plt.plot(L[0][1000:2000])
 plt.plot(L[0][2000:3000])
 plt.show()
 
-SH = tda.Silhouette(resolution = 1000, weight = lambda x: np.power(x[1]-x[0], 5))
+def pow(n):
+  return lambda x: np.power(x[1]-x[0],n)
+
+SH = tda.Silhouette(resolution = 1000, weight = pow(5))
 S = SH.fit_transform(diags)
 plt.plot(S[0])
 plt.show()

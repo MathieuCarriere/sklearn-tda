@@ -7,26 +7,22 @@ ext_address = "./sklearn_tda/_c_functions/"
 vect = Extension(name="sklearn_tda.vectors",
                  sources=[ext_address + "vectors.pyx", ext_address + "wrapper.pyx"],
                  language="c++",
-                 extra_compile_args=["-std=c++14"],
-                 extra_link_args=["-std=c++11"])
+                 extra_compile_args=["-std=c++14"])
 
 kern = Extension(name="sklearn_tda.kernels",
                  sources=[ext_address + "kernels.pyx", ext_address + "wrapper.pyx"],
                  language="c++",
-                 extra_compile_args=["-std=c++14"],
-                 extra_link_args=["-std=c++11"])
+                 extra_compile_args=["-std=c++14"])
 
 hera_w = Extension(name="sklearn_tda.hera_wasserstein",
                  sources=[ext_address + "hera_wasserstein.pyx"],
                  language="c++",
-                 extra_compile_args=["-std=c++14", "-I./sklearn_tda/_c_functions/hera/geom_matching/wasserstein/include/"],
-                 extra_link_args=["-std=c++11"])
+                 extra_compile_args=["-std=c++14", "-I./sklearn_tda/_c_functions/hera/geom_matching/wasserstein/include/"])
 
 hera_b = Extension(name="sklearn_tda.hera_bottleneck",
                  sources=[ext_address + "hera_bottleneck.pyx"],
                  language="c++",
-                 extra_compile_args=["-std=c++14", "-I./sklearn_tda/_c_functions/hera/geom_bottleneck/include/"],
-                 extra_link_args=["-std=c++11"])
+                 extra_compile_args=["-std=c++14", "-I./sklearn_tda/_c_functions/hera/geom_bottleneck/include/"])
 
 try:
     from Cython.Distutils import build_ext
