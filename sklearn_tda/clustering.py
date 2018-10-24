@@ -70,7 +70,7 @@ class MapperComplex(BaseEstimator, TransformerMixin):
         for i in range(num_pts):
             cover.append([])
 
-        clus_base, clus_color, clus_size = 0, dict(), dict()
+        clus_base, self.clus_color, self.clus_size, self.clus_filter = 0, dict(), dict(), dict()
         for preimage in binned_data:
 
             idxs = np.array(binned_data[preimage])
@@ -83,8 +83,10 @@ class MapperComplex(BaseEstimator, TransformerMixin):
             for i in range(num_clus_pre):
                 subpopulation = idxs[clusters == i]
                 color_val = np.mean(self.color[subpopulation])
-                clus_color[clus_base + i] = color_val
-                clus_size[clus_base + i] = len(subpopulation)
+                filter_val = np.mean(self.filters[subpopulation,0])
+                self.clus_color[clus_base + i] = color_val
+                self.clus_filter[clus_base + i] = filter_val
+                self.clus_size[clus_base + i] = len(subpopulation)
 
             for i in range(clusters.shape[0]):
                 if clusters[i] != -1:
@@ -94,25 +96,44 @@ class MapperComplex(BaseEstimator, TransformerMixin):
 
         self.st_ = gd.SimplexTree()
         for i in range(num_pts):
-            num_clus_i = len(cover[i])
-            for j in range(num_clus_i):
-                self.st_.insert([cover[i][j]])
-            self.st_.insert(cover[i])
+            self.st_.insert(cover[i], filtration = -3)
 
         self.graph_ = []
         for simplex in self.st_.get_skeleton(2):
-            print(simplex)
             if len(simplex[0]) > 1:
                 idx1, idx2 = simplex[0][0], simplex[0][1]
                 if self.mask <= idx1 and self.mask <= idx2:
                     self.graph_.append([simplex[0]])
             else:
                 clus_idx = simplex[0][0]
-                if self.mask <= clus_size[clus_idx]:
-                    self.graph_.append([simplex[0], clus_color[clus_idx], clus_size[clus_idx]])
+                if self.mask <= self.clus_size[clus_idx]:
+                    self.graph_.append([simplex[0], self.clus_color[clus_idx], self.clus_size[clus_idx]])
 
         return self
 
+    def persistence_diagram(self):
+        list_simplices, list_vertices = self.st_.get_skeleton(1), self.st_.get_skeleton(0)
+        for simplex in list_simplices:
+            self.st_.insert(simplex[0] + [-2], filtration = -3)
+        min_val, max_val = min(self.clus_filter.values()), max(self.clus_filter.values())
+        for vertex in list_vertices:
+            if self.st_.find(vertex[0]) == True:
+                self.st_.assign_filtration(vertex[0],        filtration = -2 + (self.clus_filter[vertex[0][0]]-min_val)/(max_val-min_val))
+                self.st_.assign_filtration(vertex[0] + [-2], filtration =  2 - (self.clus_filter[vertex[0][0]]-min_val)/(max_val-min_val))
+        self.st_.make_filtration_non_decreasing()
+        dgm = self.st_.persistence()
+        for point in range(len(dgm)):
+            b,d = dgm[point][1][0], dgm[point][1][1]
+            if b < 0:
+                b = min_val+(b+2)*(max_val-min_val)
+            else:
+                b = min_val+(2-b)*(max_val-min_val)
+            if d < 0:
+                d = min_val+(d+2)*(max_val-min_val)
+            else:
+                d = min_val+(2-d)*(max_val-min_val)
+            dgm[point] = tuple([dgm[point][0], tuple([b,d])])
+        return dgm
 
 class GraphInducedComplex(BaseEstimator, TransformerMixin):
 
