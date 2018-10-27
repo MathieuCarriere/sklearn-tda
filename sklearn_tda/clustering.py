@@ -40,11 +40,13 @@ class NNClustering(BaseEstimator, TransformerMixin):
 
 class MapperComplex(BaseEstimator, TransformerMixin):
 
-    def __init__(self, filters, color = 0, resolutions = -1, gains = .3, clustering = DBSCAN(), mask = 0, verbose = False):
-        self.filters, self.resolutions, self.gains, self.color, self.clustering = filters, resolutions, gains, color, clustering
+    def __init__(self, filters = np.array([[0]]), colors = np.array([[0]]), resolutions = -1, gains = .3, clustering = DBSCAN(), mask = 0, verbose = False,
+                       beta = 0., C = 100, N = 100):
+        self.filters, self.resolutions, self.gains, self.colors, self.clustering = filters, resolutions, gains, colors, clustering
         self.mask, self.verbose = mask, verbose
+        self.beta, self.C, self.N = beta, C, N
 
-    def get_optimal_parameters_for_hierarchical_clustering(self, X, N = 100, g = 1., beta = .01, C = 100):
+    def get_optimal_parameters_for_hierarchical_clustering(self, X):
 
         if self.filters.shape[0] == 1:
             filters = X[:,self.filters.flatten()]
@@ -52,11 +54,11 @@ class MapperComplex(BaseEstimator, TransformerMixin):
             filters = self.filters
 
         num_pts, num_filt, delta = X.shape[0], filters.shape[1], 0
-        m = int(  num_pts / np.exp((1+beta) * np.log(np.log(num_pts)/np.log(C)))  )
-        for _ in range(N):
+        m = int(  num_pts / np.exp((1+self.beta) * np.log(np.log(num_pts)/np.log(self.C)))  )
+        for _ in range(self.N):
             subpop = np.random.choice(num_pts, size = m, replace = False)
             d, _, _ = directed_hausdorff(X, X[subpop,:])
-            delta += d/N
+            delta += d/self.N
 
         pairwise = pairwise_distances(X)
         pairs = np.argwhere(pairwise <= delta)
@@ -67,7 +69,7 @@ class MapperComplex(BaseEstimator, TransformerMixin):
             minf, maxf = np.min(F), np.max(F)
             resf = 0
             for p in range(num_pairs):
-                resf = max(resf, abs(F[pairs[p,0]] - F[pairs[p,1]])/g)
+                resf = max(resf, abs(F[pairs[p,0]] - F[pairs[p,1]]))
             res.append(int((maxf-minf)/resf))
 
         return delta, res
@@ -80,6 +82,16 @@ class MapperComplex(BaseEstimator, TransformerMixin):
         else:
             filters = self.filters
 
+        if self.colors.shape[0] == 1:
+            colors = X[:, self.colors.flatten()]
+        else:
+            colors = self.colors
+
+        if isinstance(self.gains, float):
+            gains = self.gains * np.ones([filters.shape[1]])
+        else:
+            gains = self.gains
+
         if self.resolutions == -1:
             delta, resolutions = self.get_optimal_parameters_for_hierarchical_clustering(X)
             clustering = NNClustering(radius = delta)
@@ -87,20 +99,10 @@ class MapperComplex(BaseEstimator, TransformerMixin):
             resolutions = self.resolutions
             clustering  = self.clustering
 
-        if isinstance(self.gains, float):
-            gains = self.gains * np.ones([filters.shape[1]])
-        else:
-            gains = self.gains
-
-        if isinstance(self.color, int):
-            color = X[:, self.color]
-        else:
-            color = self.color
-
         self.st_, self.graph_ = gd.SimplexTree(), []
-        self.clus_color, self.clus_size, self.clus_filter = dict(), dict(), dict()
+        self.clus_colors, self.clus_size = dict(), dict()
 
-        num_filters = filters.shape[1]
+        num_filters, num_colors = filters.shape[1], colors.shape[1]
         interval_inds, intersec_inds = np.empty(filters.shape), np.empty(filters.shape)
         for i in range(num_filters):
             f, r, g = filters[:,i], resolutions[i], gains[i]
@@ -154,10 +156,8 @@ class MapperComplex(BaseEstimator, TransformerMixin):
             num_clus_pre = np.max(clusters) + 1
             for i in range(num_clus_pre):
                 subpopulation = idxs[clusters == i]
-                color_val = np.mean(color[subpopulation])
-                filter_val = np.mean(filters[subpopulation,0])
-                self.clus_color[clus_base + i] = color_val
-                self.clus_filter[clus_base + i] = filter_val
+                color_vals = np.mean(colors[subpopulation,:], axis = 0)
+                self.clus_colors[clus_base + i] = color_vals
                 self.clus_size[clus_base + i] = len(subpopulation)
 
             for i in range(clusters.shape[0]):
@@ -172,39 +172,39 @@ class MapperComplex(BaseEstimator, TransformerMixin):
         for simplex in self.st_.get_skeleton(2):
             if len(simplex[0]) > 1:
                 idx1, idx2 = simplex[0][0], simplex[0][1]
-                if self.mask <= idx1 and self.mask <= idx2:
+                if self.mask <= self.clus_size[idx1] and self.mask <= self.clus_size[idx2]:
                     self.graph_.append([simplex[0]])
             else:
                 clus_idx = simplex[0][0]
                 if self.mask <= self.clus_size[clus_idx]:
-                    self.graph_.append([simplex[0], self.clus_color[clus_idx], self.clus_size[clus_idx]])
+                    self.graph_.append([simplex[0], self.clus_colors[clus_idx], self.clus_size[clus_idx]])
 
         return self
 
     def persistence_diagram(self):
-        st = gd.SimplexTree()
-        list_simplices, list_vertices = self.st_.get_skeleton(1), self.st_.get_skeleton(0)
-        for simplex in list_simplices:
-            st.insert(simplex[0] + [-2], filtration = -3)
-        min_val, max_val = min(self.clus_filter.values()), max(self.clus_filter.values())
-        for vertex in list_vertices:
-            if st.find(vertex[0]):
-                st.assign_filtration(vertex[0],        filtration = -2 + (self.clus_filter[vertex[0][0]]-min_val)/(max_val-min_val))
-                st.assign_filtration(vertex[0] + [-2], filtration =  2 - (self.clus_filter[vertex[0][0]]-min_val)/(max_val-min_val))
-        st.make_filtration_non_decreasing()
-        dgm = st.persistence()
-        for point in range(len(dgm)):
-            b,d = dgm[point][1][0], dgm[point][1][1]
-            if b < 0:
-                b = min_val+(b+2)*(max_val-min_val)
-            else:
-                b = min_val+(2-b)*(max_val-min_val)
-            if d < 0:
-                d = min_val+(d+2)*(max_val-min_val)
-            else:
-                d = min_val+(2-d)*(max_val-min_val)
-            dgm[point] = tuple([dgm[point][0], tuple([b,d])])
-        return dgm
+        list_dgm = []
+        num_cols = self.clus_colors[list(self.clus_colors.keys())[0]].shape[0]
+        for c in range(num_cols):
+            col_vals = []
+            for key, elem in self.clus_colors.items():
+                col_vals.append(elem[c])
+            st = gd.SimplexTree()
+            list_simplices, list_vertices = self.st_.get_skeleton(1), self.st_.get_skeleton(0)
+            for simplex in list_simplices:
+                st.insert(simplex[0] + [-2], filtration = -3)
+            min_val, max_val = min(col_vals), max(col_vals)
+            for vertex in list_vertices:
+                if st.find(vertex[0]):
+                    st.assign_filtration(vertex[0],        filtration = -2 + (col_vals[vertex[0][0]]-min_val)/(max_val-min_val))
+                    st.assign_filtration(vertex[0] + [-2], filtration =  2 - (col_vals[vertex[0][0]]-min_val)/(max_val-min_val))
+            st.make_filtration_non_decreasing()
+            dgm = st.persistence()
+            for point in range(len(dgm)):
+                b,d = dgm[point][1][0], dgm[point][1][1]
+                b,d = min_val+(2-abs(b))*(max_val-min_val), min_val+(2-abs(d))*(max_val-min_val)
+                dgm[point] = tuple([dgm[point][0], tuple([b,d])])
+            list_dgm.append(dgm)
+        return list_dgm
 
 class GraphInducedComplex(BaseEstimator, TransformerMixin):
 
