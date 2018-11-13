@@ -32,8 +32,12 @@ B = BC.fit_transform(diags)
 plt.plot(B[0])
 plt.show()
 
+def linearWeight(x):
+    if x[0]<=x[1]: return 1
+    else: return x[1]/x[0] 
+
 diagsT = tda.DiagramPreprocessor(use=True, scaler=tda.BirthPersistenceTransform()).fit_transform(diags)
-PI = tda.PersistenceImage(bandwidth = 1.0, weight = arctan(1.0,1.0), im_range = [0,10,0,10], resolution = [100,100])
+PI = tda.PersistenceImage(bandwidth = 1.0, weight = linearWeight, im_range = [0,10,0,10], resolution = [100,100])
 I = PI.fit_transform(diagsT)
 plt.imshow(np.flip(np.reshape(I[0], [100,100]), 0))
 plt.show()
