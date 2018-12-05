@@ -52,7 +52,7 @@ class DiagramPreprocessor(BaseEstimator, TransformerMixin):
 
 class ProminentPoints(BaseEstimator, TransformerMixin):
 
-    def __init__(self, use = False, num_pts = 10, threshold = -1, point_type = "upper"):
+    def __init__(self, use=False, num_pts=10, threshold=-1, point_type="upper"):
         self.num_pts    = num_pts
         self.threshold  = threshold
         self.use        = use
@@ -84,7 +84,7 @@ class ProminentPoints(BaseEstimator, TransformerMixin):
 
 class DiagramSelector(BaseEstimator, TransformerMixin):
 
-    def __init__(self, limit = np.inf, point_type = "finite"):
+    def __init__(self, limit=np.inf, point_type="finite"):
         self.limit, self.point_type = limit, point_type
 
     def fit(self, X, y = None):

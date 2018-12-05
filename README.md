@@ -133,7 +133,7 @@ Currently available classes are:
 
 Currently available classes are:
 
-  * **WassersteinDistance**: cythonization of [hera](https://bitbucket.org/grey_narn/hera/src). **Requires cython!!**
+  * **WassersteinDistance**: wrapper for [hera](https://bitbucket.org/grey_narn/hera/src). **Requires cython!!**
 
     Parameters:
 
@@ -149,6 +149,24 @@ Currently available classes are:
     | **name** | **description** |
     | --- | --- |
     |**num_directions** = 10| number of directions.|
+
+### Clustering
+
+  * **GraphInducedComplex**: wrapper for the [Graph Induced Complex](http://gudhi.gforge.inria.fr/python/latest/nerve_gic_complex_ref.html) module of Gudhi. **Requires Gudhi!!**
+
+    Parameters:
+
+    | **name** | **description** |
+    | --- | --- |
+    | **graph**=-1 | radius for the neighborhood graph built on top of the point cloud. If -1, it is computed automatically from **graph_subsampling**,  
+                     **graph_subsampling_power** and  **graph_subsampling_constant**. |
+    | **graph_subsampling**=100 | number of subsamples drawn on data. Not used if **graph**>0. |
+    | **graph_subsampling_power**=0.001| power for the approximation method. Not used if **graph**>0.|
+    | **graph_subsampling_constant**=10| constant for the approximation method. Not used if **graph**>0.|
+
+  * **Mapper**: implementation of the [Mapper](https://research.math.osu.edu/tgda/mapperPBG.pdf).
+
+    Parameters
 
 # Installing sklearn_tda
 

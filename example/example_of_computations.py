@@ -50,7 +50,12 @@ plt.show()
 
 diags2 = [D]
 
-SW = tda.SlicedWassersteinKernel(num_directions = 10, bandwidth = 1.0)
+PSS = tda.PersistenceScaleSpaceKernel(bandwidth = 1.0)
+X = PSS.fit(diags)
+Y = PSS.transform(diags2)
+print("PSS kernel is " + str(Y[0][0]))
+
+SW = tda.SlicedWassersteinKernel(num_directions = 1000, bandwidth = 1.0)
 X = SW.fit(diags)
 Y = SW.transform(diags2)
 print("SW  kernel is " + str(Y[0][0]))
@@ -60,17 +65,12 @@ X = PWG.fit(diags)
 Y = PWG.transform(diags2)
 print("PWG kernel is " + str(Y[0][0]))
 
-PSS = tda.PersistenceScaleSpaceKernel(bandwidth = 1.0)
-X = PSS.fit(diags)
-Y = PSS.transform(diags2)
-print("PSS kernel is " + str(Y[0][0]))
-
 W = tda.WassersteinDistance(wasserstein = 1, delta = 0.001)
 X = W.fit(diags)
 Y = W.transform(diags2)
 print("Wasserstein-1 distance is " + str(Y[0][0]))
 
-sW = tda.SlicedWassersteinDistance(num_directions = 10)
+sW = tda.SlicedWassersteinDistance(num_directions = 1000)
 X = sW.fit(diags)
 Y = sW.transform(diags2)
 print("sliced Wasserstein distance is " + str(Y[0][0]))

@@ -1,0 +1,3 @@
+[submodule "sklearn_tda/hera"]
+	path = sklearn_tda/hera
+	url = https://bitbucket.org/grey_narn/hera
