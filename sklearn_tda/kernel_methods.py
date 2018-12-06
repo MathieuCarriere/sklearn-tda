@@ -63,10 +63,9 @@ class SlicedWassersteinKernel(BaseEstimator, TransformerMixin):
 
 class PersistenceWeightedGaussianKernel(BaseEstimator, TransformerMixin):
 
-    def __init__(self, bandwidth=1.0, weight=lambda x: 1, use_pss=False):
-        self.bandwidth_ = bandwidth
-        self.weight_    = weight
-        self.use_pss_   = use_pss
+    def __init__(self, bandwidth=1.0, weight=lambda x: 1, kernel_approx=None, use_pss=False):
+        self.bandwidth_, self.weight_, self.use_pss_ = bandwidth, weight, use_pss
+        self.kernel_approx = kernel_approx
 
     def fit(self, X, y=None):
         self.diagrams_ = list(X)
@@ -76,6 +75,8 @@ class PersistenceWeightedGaussianKernel(BaseEstimator, TransformerMixin):
                 op_D = np.tensordot(self.diagrams_[i], np.array([[0.0,1.0], [1.0,0.0]]), 1)
                 self.diagrams_[i] = np.concatenate([self.diagrams_[i], op_D], 0)
         self.ws_ = [ np.array([self.weight_(self.diagrams_[i][j,:]) for j in range(self.diagrams_[i].shape[0])]) for i in range(len(self.diagrams_)) ]
+        if self.kernel_approx is not None:
+            self.approx_ = np.concatenate([np.sum(np.multiply(self.ws_[i][:,np.newaxis], self.kernel_approx.transform(self.diagrams_[i])), axis=0)[np.newaxis,:] for i in range(len(self.diagrams_))])
         return self
 
     def transform(self, X):
@@ -86,26 +87,33 @@ class PersistenceWeightedGaussianKernel(BaseEstimator, TransformerMixin):
                 Xp[i] = np.concatenate([Xp[i], op_X], 0)
         Xfit = np.zeros((len(Xp), len(self.diagrams_)))
         if self.diagrams_ == Xp:
-            for i in range(len(self.diagrams_)):
-                for j in range(i+1, len(self.diagrams_)):
-                    W = np.matmul(self.ws_[i][:,np.newaxis], self.ws_[j][np.newaxis,:])
-                    E = (1./(np.sqrt(2*np.pi)*self.bandwidth_)) * np.exp(-np.square(pairwise_distances(self.diagrams_[i], self.diagrams_[j]))/(2*np.square(self.bandwidth_)))
-                    Xfit[i,j] = np.sum(np.multiply(W, E))
-                    Xfit[j,i] = X[i,j]
+            if self.kernel_approx is not None:
+                Xfit = (1./(np.sqrt(2*np.pi)*self.bandwidth_)) * np.matmul(self.approx_, self.approx_.T)
+            else:
+                for i in range(len(self.diagrams_)):
+                    for j in range(i+1, len(self.diagrams_)):
+                        W = np.matmul(self.ws_[i][:,np.newaxis], self.ws_[j][np.newaxis,:])
+                        E = (1./(np.sqrt(2*np.pi)*self.bandwidth_)) * np.exp(-np.square(pairwise_distances(self.diagrams_[i], self.diagrams_[j]))/(2*np.square(self.bandwidth_)))
+                        Xfit[i,j] = np.sum(np.multiply(W, E))
+                        Xfit[j,i] = X[i,j]
         else:
             ws = [ np.array([self.weight_(Xp[i][j,:]) for j in range(Xp[i].shape[0])]) for i in range(len(Xp)) ]
-            for i in range(len(Xp)):
-                for j in range(len(self.diagrams_)):
-                    W = np.matmul(ws[i][:,np.newaxis], self.ws_[j][np.newaxis,:])
-                    E = (1./(np.sqrt(2*np.pi)*self.bandwidth_)) * np.exp(-np.square(pairwise_distances(Xp[i], self.diagrams_[j]))/(2*np.square(self.bandwidth_)))
-                    Xfit[i,j] = np.sum(np.multiply(W, E))
+            if self.kernel_approx is not None:
+                approx = np.concatenate([np.sum(np.multiply(ws[i][:,np.newaxis], self.kernel_approx.transform(Xp[i])), axis=0)[np.newaxis,:] for i in range(len(Xp))])
+                Xfit = (1./(np.sqrt(2*np.pi)*self.bandwidth_)) * np.matmul(approx, self.approx_.T)
+            else:
+                for i in range(len(Xp)):
+                    for j in range(len(self.diagrams_)):
+                        W = np.matmul(ws[i][:,np.newaxis], self.ws_[j][np.newaxis,:])
+                        E = (1./(np.sqrt(2*np.pi)*self.bandwidth_)) * np.exp(-np.square(pairwise_distances(Xp[i], self.diagrams_[j]))/(2*np.square(self.bandwidth_)))
+                        Xfit[i,j] = np.sum(np.multiply(W, E))
         
         return Xfit
 
 class PersistenceScaleSpaceKernel(BaseEstimator, TransformerMixin):
 
-    def __init__(self, bandwidth=1.0):
-        self.pwg_ = PersistenceWeightedGaussianKernel(bandwidth=bandwidth, weight=lambda x: 1 if x[1] >= x[0] else -1, use_pss=True)
+    def __init__(self, bandwidth=1.0, kernel_approx=None):
+        self.pwg_ = PersistenceWeightedGaussianKernel(bandwidth=bandwidth, weight=lambda x: 1 if x[1] >= x[0] else -1, kernel_approx=kernel_approx, use_pss=True)
 
     def fit(self, X, y=None):
         self.pwg_.fit(X,y)
