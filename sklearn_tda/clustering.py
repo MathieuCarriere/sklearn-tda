@@ -156,7 +156,7 @@ class MapperComplex(BaseEstimator, TransformerMixin):
             num_clus_pre = np.max(clusters) + 1
             for i in range(num_clus_pre):
                 subpopulation = idxs[clusters == i]
-                color_vals = np.mean(colors[subpopulation,:], axis = 0)
+                color_vals = np.mean(colors[subpopulation,:], axis=0)
                 self.clus_colors[clus_base + i] = color_vals
                 self.clus_size[clus_base + i] = len(subpopulation)
 
@@ -208,9 +208,9 @@ class MapperComplex(BaseEstimator, TransformerMixin):
 
 class GraphInducedComplex(BaseEstimator, TransformerMixin):
 
-    def __init__(self, graph = -1, graph_subsampling = 100, graph_subsampling_power = 0.001, graph_subsampling_constant = 10,
-                       cover_type = "functional", filter = 0, resolution = -1, gain = 0.33, Voronoi_subsampling = 1000,
-                       mask = 0, color = 0, verbose = False, input = "point cloud"):
+    def __init__(self, graph=-1, graph_subsampling=100, graph_subsampling_power=0.001, graph_subsampling_constant=10,
+                       cover_type="functional", filter=0, resolution=-1, gain=0.33, Voronoi_subsampling=1000,
+                       mask=0, color=0, verbose=False, input="point cloud"):
 
         if USE_GUDHI == False:
             raise ImportError("Error: Gudhi not imported")

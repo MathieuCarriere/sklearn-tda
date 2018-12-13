@@ -16,7 +16,7 @@ class BirthPersistenceTransform(BaseEstimator, TransformerMixin):
     def __init__(self):
         return None
 
-    def fit(self, X, y = None):
+    def fit(self, X, y=None):
         return self
 
     def transform(self, X):
@@ -25,11 +25,11 @@ class BirthPersistenceTransform(BaseEstimator, TransformerMixin):
 
 class DiagramPreprocessor(BaseEstimator, TransformerMixin):
 
-    def __init__(self, use = False, scaler = StandardScaler()):
+    def __init__(self, use=False, scaler=StandardScaler()):
         self.scaler = scaler
         self.use    = use
 
-    def fit(self, X, y = None):
+    def fit(self, X, y=None):
         if self.use == True:
             if len(X) == 1:
                 P = X[0]

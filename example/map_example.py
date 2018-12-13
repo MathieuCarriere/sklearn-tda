@@ -1,9 +1,16 @@
 import numpy as np
 import sklearn_tda as tda
 from sklearn.cluster import DBSCAN
+import os
 
 X = np.loadtxt("human")
-map = tda.MapperComplex(filters = X[:,[2,0]], resolutions = [10,3], gains = [0.33,0.33], color = X[:,2], clustering = DBSCAN(eps = 0.05, min_samples = 5)).fit(X)
+
+
+
+
+
+
+map = tda.MapperComplex(filters=X[:,[2,0]], resolutions=[10,3], gains=[0.33,0.33], colors=X[:,2:3], clustering=DBSCAN(eps=0.05, min_samples=5)).fit(X)
 
 num_pts, num_edges = 0, 0
 min_col, min_sz, max_col, max_sz = 1e10, 1e10, -1e10, -1e10
@@ -21,7 +28,26 @@ f = open("mapper", "w")
 f.write("%s\n%s\n%s\n%f %f\n%d %d\n" % ("human", "coord2-0", "coord2", 10, 0.33, num_pts, num_edges))
 for value in map.graph_:
     if len(value[0]) == 1:
-        f.write(str(value[0][0]) + " " + str(value[1]) + " " + str(value[2]) + "\n")
+        f.write(str(value[0][0]) + " " + str(value[1][0]) + " " + str(value[2]) + "\n")
 for value in map.graph_:
     if len(value[0]) == 2:
         f.write(str(value[0][0]) + " " + str(value[0][1]) + "\n")
+f.close()
+
+os.system("python3 ~/Git/sklearn_tda/example/KeplerMapperVisuFromTxtFile.py -f ~/Git/sklearn_tda/example/mapper")
+os.system("rm ~/Git/sklearn_tda/example/mapper")
+os.system("firefox ~/Git/sklearn_tda/example/mapper.html")
+
+
+
+
+
+
+cov = tda.GraphInducedComplex(cover_type="functional", filter=2).fit(X)
+cov.print_result("dot")
+os.system("neato ~/Git/sklearn_tda/example/matrix_sc.dot -Tpdf -o mapper.pdf")
+os.system("rm ~/Git/sklearn_tda/example/matrix_sc.dot")
+
+print(cov.compute_confidence_level_from_distance(bootstrap=20, distance=0.2))
+print(cov.compute_distance_from_confidence_level(bootstrap=20, alpha=0.95))
+print(cov.compute_p_value(bootstrap=20))

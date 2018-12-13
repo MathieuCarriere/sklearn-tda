@@ -33,7 +33,7 @@ Currently available classes are:
     | **use** = False|     whether to use the class or not. |
     | **num_pts** = 10|    cardinality threshold (points are ordered by persistence). |
     | **threshold** = -1|  distance-to-diagonal threshold. |
-    | **point_type** = "upper"|  whether to keep the points above ("upper") or below ("lower") the aforementioned thresholds. |
+    | **point_type** = "upper"|  whether to keep the points above ("upper") or below ("lower") the previous thresholds. |
     
 
   * **DiagramSelector**: returns the finite or essential points of the diagrams.
@@ -56,9 +56,9 @@ Currently available classes are:
 
     | **name** | **description** |
     | --- | --- |
-    |**num_landscapes** = 5| number of landscape functions.|
-    |**resolution** = 100| resolution of each landscape function.|
-    |**ls_range** = [np.nan, np.nan]| range of x-coordinate. If np.nan, min and max on x-axis are computed from the diagrams.|
+    |**num_landscapes** = 5| number of landscapes.|
+    |**resolution** = 100| number of sample points of each landscape.|
+    |**ls_range** = [np.nan, np.nan]| range of each landscape. If np.nan, it is set to min and max of x-axis in the diagrams.|
 
   * **PersistenceImage**: implementation of [persistence images](http://jmlr.org/papers/v18/16-337.html).
 
@@ -66,10 +66,10 @@ Currently available classes are:
 
     | **name** | **description** |
     | --- | --- |
-    |**bandwidth** = 1.0 | Bandwidth of Gaussian kernel on the plane.|
+    |**bandwidth** = 1.0 | bandwidth of Gaussian kernel on the plane.|
     |**weight** = lambda x: 1| weight on diagram points. It is a python function.|
     |**resolution** = [20,20]| resolution of image.|
-    |**im_range** = [np.nan, np.nan, np.nan, np.nan]| range of coordinates. If np.nan, min and max on each axis are computed from the diagrams.|
+    |**im_range** = [np.nan, np.nan, np.nan, np.nan]| range of coordinates. If np.nan, it is set to min and max of x- and y-axis in the diagrams.|
 
   * **BettiCurve**: implementation of [Betti curves](https://www.researchgate.net/publication/316604237_Time_Series_Classification_via_Topological_Data_Analysis).
 
@@ -77,8 +77,8 @@ Currently available classes are:
 
     | **name** | **description** |
     | --- | --- |
-    |**resolution** = 100| resolution of Betti curve.|
-    |**bc_range** = [np.nan, np.nan]| range of x-coordinate. If np.nan, min and max on x-axis are computed from the diagrams.|
+    |**resolution** = 100| number of sample points of Betti curve.|
+    |**bc_range** = [np.nan, np.nan]| range of Betti curve. If np.nan, it is set to min and max of x-axis in the diagrams.|
 
   * **Silhouette**: implementation of [silhouettes](http://jocg.org/index.php/jocg/article/view/203).
 
@@ -87,8 +87,8 @@ Currently available classes are:
     | **name** | **description** |
     | --- | --- |
     |**weight** = lambda x: 1| weight on diagram points. It is a python function.|
-    |**resolution** = 100| resolution of silhouette.|
-    |**range** = [np.nan, np.nan]| range of x-coordinate. If np.nan, min and max on x-axis are computed from the diagrams.|
+    |**resolution** = 100| number of sample points of silhouette.|
+    |**range** = [np.nan, np.nan]| range of silhouette. If np.nan, it is set to min and max of x-axis in the diagrams.|
 
   * **TopologicalVector**: implementation of [distance vectors](https://diglib.eg.org/handle/10.1111/cgf12692).
 
@@ -102,25 +102,27 @@ Currently available classes are:
 
 Currently available classes are:
 
-  * **PersistenceScaleSpace**: implementation of [persistence scale space kernel](https://www.cv-foundation.org/openaccess/content_cvpr_2015/papers/Reininghaus_A_Stable_Multi-Scale_2015_CVPR_paper.pdf). **Requires cython!!**
+  * **PersistenceScaleSpace**: implementation of [Persistence Scale Space Kernel](https://www.cv-foundation.org/openaccess/content_cvpr_2015/papers/Reininghaus_A_Stable_Multi-Scale_2015_CVPR_paper.pdf).
 
     Parameters:
 
     | **name** | **description** |
     | --- | --- |
     |**bandwidth** = 1.0| bandwidth of kernel.|
+    |**kernel_approx** = None| kernel approximation method.|
 
-  * **PersistenceWeightedGaussian**: implementation of [persistence weighted gaussian kernel](http://proceedings.mlr.press/v48/kusano16.html). **Requires cython!!**
+  * **PersistenceWeightedGaussian**: implementation of [Persistence Weighted Gaussian Kernel](http://proceedings.mlr.press/v48/kusano16.html).
 
     Parameters:
 
     | **name** | **description** |
     | --- | --- |
-    |**bandwidth** = 1.0 | Bandwidth of Gaussian kernel on the plane.|
+    |**bandwidth** = 1.0 | bandwidth of Gaussian kernel on the plane.|
     |**weight** = lambda x: 1| weight on diagram points. It is a python function.|
+    |**kernel_approx** = None| kernel approximation method.|
     |**use_pss** = False| whether to add symmetric of points from the diagonal.|
 
-  * **SlicedWasserstein**: implementation of [sliced Wasserstein kernel](http://proceedings.mlr.press/v70/carriere17a.html). **Requires cython!!**
+  * **SlicedWasserstein**: implementation of [Sliced Wasserstein Kernel](http://proceedings.mlr.press/v70/carriere17a.html).
 
     Parameters:
 
@@ -133,7 +135,7 @@ Currently available classes are:
 
 Currently available classes are:
 
-  * **WassersteinDistance**: wrapper for [hera](https://bitbucket.org/grey_narn/hera/src). **Requires cython!!**
+  * **WassersteinDistance**: wrapper for [Hera](https://bitbucket.org/grey_narn/hera/src). **Requires cython!!**
 
     Parameters:
 
@@ -142,7 +144,7 @@ Currently available classes are:
     |**wasserstein** = 1| index of Wasserstein distance. Set to np.inf for bottleneck distance.|
     |**delta** = 0.001| approximation error.|
 
-  * **SlicedWassersteinDistance**: implementation of [sliced Wasserstein distance](http://proceedings.mlr.press/v70/carriere17a.html). **Requires cython!!**
+  * **SlicedWassersteinDistance**: implementation of [Sliced Wasserstein distance](http://proceedings.mlr.press/v70/carriere17a.html).
 
     Parameters:
 
@@ -158,15 +160,36 @@ Currently available classes are:
 
     | **name** | **description** |
     | --- | --- |
-    | **graph**=-1 | radius for the neighborhood graph built on top of the point cloud. If -1, it is computed automatically from **graph_subsampling**,  
-                     **graph_subsampling_power** and  **graph_subsampling_constant**. |
-    | **graph_subsampling**=100 | number of subsamples drawn on data. Not used if **graph**>0. |
-    | **graph_subsampling_power**=0.001| power for the approximation method. Not used if **graph**>0.|
-    | **graph_subsampling_constant**=10| constant for the approximation method. Not used if **graph**>0.|
+    | **graph** = -1 | radius for the neighborhood graph built on top of the point cloud. If -1, it is computed automatically. |
+    | **graph_subsampling** = 100 | number of bootstrap iterations. Used only if **graph** = -1. |
+    | **graph_subsampling_power** = 0.001| power for the approximation method. Used only if **graph** = -1.|
+    | **graph_subsampling_constant** = 10| constant for the approximation method. Used only if **graph** = -1.|
+    | **cover_type** = "functional"| String specifying the cover. Either "functional" or "Voronoi". |
+    | **filter** = 0| Filter function. Either an integer, in which case the corresponding coordinate is used, or a numpy array specifying the filter values on each node. Not used if **cover_type** = "Voronoi".|
+    | **resolution** = -1| Resolution of intervals. If -1, it is computed automatically. Not used if **cover_type** = "Voronoi".|
+    | **gain** = 0.33| Gain of intervals. Not used if **cover_type** = "Voronoi".|
+    | **Voronoi_subsampling** = 1000| Number of Voronoi cells. Not used if **cover_type** = "functional".|
+    | **mask** = 0| Threshold on the node sizes. |
+    | **color** = 0| Color function. Either an integer, in which case the corresponding coordinate is used, or a numpy array specifying the color values on each node. |
+    | **verbose** = False| Whether to print info or not. |
+    | **input** = "point cloud"| Specifies the input type. Either "point cloud" or "distance matrix". If "distance matrix", some class methods are unavailable.|
 
   * **Mapper**: implementation of the [Mapper](https://research.math.osu.edu/tgda/mapperPBG.pdf).
 
     Parameters
+
+    | **name** | **description** |
+    | --- | --- |
+    | **filters** = np.array([[0]]) | Numpy array specifying the filter values. Each row is a point and each column is a filter dimension. If only one integer is given per column, the corresponding coordinate is used as filter. |
+    | **colors** = np.array([[0]]) | Numpy array specifying the color values. Each row is a point and each column is a color dimension. If only one integer is given per column, the corresponding coordinate is used as color. |
+    | **resolutions** = -1| List of resolutions for each filter dimension. If -1, they are computed automatically. |
+    | **gains** = 0.3| List of gains for each filter dimension. If single number, the same gain is always used. |
+    | **clustering** = sklearn.cluster.DBSCAN()| Clustering method. |
+    | **mask** = 0| Threshold on the node sizes.|
+    | **verbose** = False| Whether to print info or not.|
+    | **beta** = 0| power for the approximation method. Used only if **resolutions** = -1.|
+    | **C** = 100| constant for the approximation method. Used only if **resolutions** = -1.|
+    | **N** = 100| number of bootstrap iterations. Used only if **resolutions** = -1.|
 
 # Installing sklearn_tda
 
@@ -175,7 +198,7 @@ The sklearn_tda library requires:
 * python [>=2.7, >=3.5]
 * numpy [>= 1.8.2]
 * scikit-learn
-* cython (optional but strongly recommended)
+* cython (optional)
 
 For now, the package has to be compiled from source. You have to 
 
@@ -200,7 +223,8 @@ import sklearn_tda
 Usage
 =====
 
-Sets of diagrams are represented as lists of 2D numpy arrays.
 All modules are standard scikit-learn modules: they have fit, transform and fit_transform methods.
-Hence, the most common way to use module X on a list of persistence diagrams D is to call X.fit_transform(D).
-You can check [this python file](example/example_of_computations.py) and [this notebook](data/3DSegTDA.ipynb) for examples of computations.
+Hence, the most common way to use module X is to call X.fit_transform(input).
+The input of all modules (except the clustering modules) are lists of persistence diagram, which are represented as lists of 2D numpy arrays.
+Various examples can be found [here](example/).
+
