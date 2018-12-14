@@ -1,11 +1,12 @@
 # sklearn_tda: a scikit-learn compatible python package for Machine Learning and TDA
 
-**Author**: Mathieu Carriere.
+**Author**: Mathieu Carrière.
 
 # Description
 
 sklearn_tda is a python package for handling collections of persistence diagrams for machine learning purposes.
 Various preprocessing methods, vectorizations methods and kernels for persistence diagrams are implemented in a [scikit-learn](http://scikit-learn.org/) compatible fashion.
+Clustering methods from TDA (Mapper and Graph Induced Complex) are also implemented.
 
 ### Preprocessing
 
@@ -21,8 +22,8 @@ Currently available classes are:
 
     | **name** | **description** |
     | --- | --- |
-    | **use** = False | whether to use the class or not. |
-    | **scaler** = sklearn.preprocessing.StandardScaler() | a scaler to be fit on the diagrams. |
+    | **use** = False | Whether to use the class or not. |
+    | **scaler** = sklearn.preprocessing.StandardScaler() | Scaler to be fit on the diagrams. |
 
   * **ProminentPoints**: removes points close to the diagonal.
 
@@ -30,10 +31,10 @@ Currently available classes are:
 
     | **name** | **description** |
     | --- | --- |
-    | **use** = False|     whether to use the class or not. |
-    | **num_pts** = 10|    cardinality threshold (points are ordered by persistence). |
-    | **threshold** = -1|  distance-to-diagonal threshold. |
-    | **point_type** = "upper"|  whether to keep the points above ("upper") or below ("lower") the previous thresholds. |
+    | **use** = False|     Whether to use the class or not. |
+    | **num_pts** = 10|    Cardinality threshold (points are ordered by persistence). |
+    | **threshold** = -1|  Distance-to-diagonal threshold. |
+    | **point_type** = "upper"|  Whether to keep the points above ("upper") or below ("lower") the previous thresholds. |
     
 
   * **DiagramSelector**: returns the finite or essential points of the diagrams.
@@ -42,8 +43,8 @@ Currently available classes are:
 
     | **name** | **description** |
     | --- | --- |
-    | **limit** = np.inf | diagram points with ordinate equal to **limit** will be considered as essential. |
-    | **point_type** = "finite"| specifies the point type to return. Either "finite" or "essential". |
+    | **limit** = np.inf | Diagram points with ordinate equal to **limit** will be considered as essential. |
+    | **point_type** = "finite"| Specifies the point type to return. Either "finite" or "essential". |
 
 ### Vectorizations
 
@@ -56,9 +57,9 @@ Currently available classes are:
 
     | **name** | **description** |
     | --- | --- |
-    |**num_landscapes** = 5| number of landscapes.|
-    |**resolution** = 100| number of sample points of each landscape.|
-    |**ls_range** = [np.nan, np.nan]| range of each landscape. If np.nan, it is set to min and max of x-axis in the diagrams.|
+    |**num_landscapes** = 5| Number of landscapes.|
+    |**resolution** = 100| Number of sample points of each landscape.|
+    |**ls_range** = [np.nan, np.nan]| Range of each landscape. If np.nan, it is set to min and max of x-axis in the diagrams.|
 
   * **PersistenceImage**: implementation of [persistence images](http://jmlr.org/papers/v18/16-337.html).
 
@@ -66,10 +67,10 @@ Currently available classes are:
 
     | **name** | **description** |
     | --- | --- |
-    |**bandwidth** = 1.0 | bandwidth of Gaussian kernel on the plane.|
-    |**weight** = lambda x: 1| weight on diagram points. It is a python function.|
-    |**resolution** = [20,20]| resolution of image.|
-    |**im_range** = [np.nan, np.nan, np.nan, np.nan]| range of coordinates. If np.nan, it is set to min and max of x- and y-axis in the diagrams.|
+    |**bandwidth** = 1.0 | Bandwidth of Gaussian kernel on the plane.|
+    |**weight** = lambda x: 1| Weight on diagram points. It is a python function.|
+    |**resolution** = [20,20]| Resolution of image.|
+    |**im_range** = [np.nan, np.nan, np.nan, np.nan]| Range of coordinates. If np.nan, it is set to min and max of x- and y-axis in the diagrams.|
 
   * **BettiCurve**: implementation of [Betti curves](https://www.researchgate.net/publication/316604237_Time_Series_Classification_via_Topological_Data_Analysis).
 
@@ -77,8 +78,8 @@ Currently available classes are:
 
     | **name** | **description** |
     | --- | --- |
-    |**resolution** = 100| number of sample points of Betti curve.|
-    |**bc_range** = [np.nan, np.nan]| range of Betti curve. If np.nan, it is set to min and max of x-axis in the diagrams.|
+    |**resolution** = 100| Number of sample points of Betti curve.|
+    |**bc_range** = [np.nan, np.nan]| Range of Betti curve. If np.nan, it is set to min and max of x-axis in the diagrams.|
 
   * **Silhouette**: implementation of [silhouettes](http://jocg.org/index.php/jocg/article/view/203).
 
@@ -86,9 +87,9 @@ Currently available classes are:
 
     | **name** | **description** |
     | --- | --- |
-    |**weight** = lambda x: 1| weight on diagram points. It is a python function.|
-    |**resolution** = 100| number of sample points of silhouette.|
-    |**range** = [np.nan, np.nan]| range of silhouette. If np.nan, it is set to min and max of x-axis in the diagrams.|
+    |**weight** = lambda x: 1| Weight on diagram points. It is a python function.|
+    |**resolution** = 100| Number of sample points of silhouette.|
+    |**range** = [np.nan, np.nan]| Range of silhouette. If np.nan, it is set to min and max of x-axis in the diagrams.|
 
   * **TopologicalVector**: implementation of [distance vectors](https://diglib.eg.org/handle/10.1111/cgf12692).
 
@@ -96,40 +97,58 @@ Currently available classes are:
 
     | **name** | **description** |
     | --- | --- |
-    |**threshold** = 10| number of distances to keep.|
+    |**threshold** = 10| Number of distances to keep.|
+
+  * **ComplexPolynomial**: implementation of [complex polynomials](https://link.springer.com/chapter/10.1007%2F978-3-319-23231-7_27).
+
+    Parameters:
+
+    | **name** | **description** |
+    | --- | --- |
+    |**F** = "R"| Complex transformation to apply on the diagram points. Either "R", "S" or "T". |
+    |**threshold** = 10| Number of coefficients to keep. |
 
 ### Kernels
 
 Currently available classes are:
 
-  * **PersistenceScaleSpace**: implementation of [Persistence Scale Space Kernel](https://www.cv-foundation.org/openaccess/content_cvpr_2015/papers/Reininghaus_A_Stable_Multi-Scale_2015_CVPR_paper.pdf).
+  * **PersistenceScaleSpaceKernel**: implementation of [Persistence Scale Space Kernel](https://www.cv-foundation.org/openaccess/content_cvpr_2015/papers/Reininghaus_A_Stable_Multi-Scale_2015_CVPR_paper.pdf).
 
     Parameters:
 
     | **name** | **description** |
     | --- | --- |
-    |**bandwidth** = 1.0| bandwidth of kernel.|
-    |**kernel_approx** = None| kernel approximation method.|
-
-  * **PersistenceWeightedGaussian**: implementation of [Persistence Weighted Gaussian Kernel](http://proceedings.mlr.press/v48/kusano16.html).
-
-    Parameters:
-
-    | **name** | **description** |
-    | --- | --- |
-    |**bandwidth** = 1.0 | bandwidth of Gaussian kernel on the plane.|
-    |**weight** = lambda x: 1| weight on diagram points. It is a python function.|
-    |**kernel_approx** = None| kernel approximation method.|
-    |**use_pss** = False| whether to add symmetric of points from the diagonal.|
-
-  * **SlicedWasserstein**: implementation of [Sliced Wasserstein Kernel](http://proceedings.mlr.press/v70/carriere17a.html).
+    |**bandwidth** = 1.0| Bandwidth of kernel.|
+    |**kernel_approx** = None| Kernel approximation method, such as [those in scikit-learn](https://scikit-learn.org/stable/modules/classes.html#module-sklearn.kernel_approximation).| 
+  * **PersistenceWeightedGaussianKernel**: implementation of [Persistence Weighted Gaussian Kernel](http://proceedings.mlr.press/v48/kusano16.html).
 
     Parameters:
 
     | **name** | **description** |
     | --- | --- |
-    |**num_directions** = 10| number of directions.|
-    |**bandwidth** = 1.0| bandwidth of kernel.|
+    |**bandwidth** = 1.0 | Bandwidth of Gaussian kernel.|
+    |**weight** = lambda x: 1| Weight on diagram points. It is a python function.|
+    |**kernel_approx** = None| Kernel approximation method, such as [those in scikit-learn](https://scikit-learn.org/stable/modules/classes.html#module-sklearn.kernel_approximation).|
+    |**use_pss** = False| Whether to add symmetric of points from the diagonal.|
+
+  * **SlicedWassersteinKernel**: implementation of [Sliced Wasserstein Kernel](http://proceedings.mlr.press/v70/carriere17a.html).
+
+    Parameters:
+
+    | **name** | **description** |
+    | --- | --- |
+    |**num_directions** = 10| Number of directions.|
+    |**bandwidth** = 1.0| Bandwidth of kernel.|
+
+  * **PersistenceFisherKernel**: implementation of [Persistence Fisher Kernel](papers.nips.cc/paper/8205-persistence-fisher-kernel-a-riemannian-manifold-kernel-for-persistence-diagrams).
+
+    Parameters:
+
+    | **name** | **description** |
+    | --- | --- |
+    |**bandwidth_fisher** = 1.0| Bandwidth of Gaussian kernel for Fisher distance.|
+    |**bandwidth** = 1.0| Bandwidth of kernel.|
+    |**kernel_approx** = None| Kernel approximation method, such as [those in scikit-learn](https://scikit-learn.org/stable/modules/classes.html#module-sklearn.kernel_approximation).|
 
 ### Metrics
 
@@ -141,8 +160,8 @@ Currently available classes are:
 
     | **name** | **description** |
     | --- | --- |
-    |**wasserstein** = 1| index of Wasserstein distance. Set to np.inf for bottleneck distance.|
-    |**delta** = 0.001| approximation error.|
+    |**wasserstein** = 1| Index of Wasserstein distance. Set to np.inf for bottleneck distance.|
+    |**delta** = 0.001| Approximation error.|
 
   * **SlicedWassersteinDistance**: implementation of [Sliced Wasserstein distance](http://proceedings.mlr.press/v70/carriere17a.html).
 
@@ -150,9 +169,20 @@ Currently available classes are:
 
     | **name** | **description** |
     | --- | --- |
-    |**num_directions** = 10| number of directions.|
+    |**num_directions** = 10| Number of directions.|
+
+  * **PersistenceFisherDistance**: implementation of [Fisher Information distance](papers.nips.cc/paper/8205-persistence-fisher-kernel-a-riemannian-manifold-kernel-for-persistence-diagrams).
+
+    Parameters:
+
+    | **name** | **description** |
+    | --- | --- |
+    |**bandwidth** = 1.0| Bandwidth of Gaussian kernel.|
+    |**kernel_approx** = None| Kernel approximation method, such as [those in scikit-learn](https://scikit-learn.org/stable/modules/classes.html#module-sklearn.kernel_approximation).|
 
 ### Clustering
+
+Currently available classes are: 
 
   * **GraphInducedComplex**: wrapper for the [Graph Induced Complex](http://gudhi.gforge.inria.fr/python/latest/nerve_gic_complex_ref.html) module of Gudhi. **Requires Gudhi!!**
 
@@ -160,10 +190,10 @@ Currently available classes are:
 
     | **name** | **description** |
     | --- | --- |
-    | **graph** = -1 | radius for the neighborhood graph built on top of the point cloud. If -1, it is computed automatically. |
-    | **graph_subsampling** = 100 | number of bootstrap iterations. Used only if **graph** = -1. |
-    | **graph_subsampling_power** = 0.001| power for the approximation method. Used only if **graph** = -1.|
-    | **graph_subsampling_constant** = 10| constant for the approximation method. Used only if **graph** = -1.|
+    | **graph** = -1 | Radius for the neighborhood graph built on top of the point cloud. If -1, it is computed automatically. |
+    | **graph_subsampling** = 100 | Number of bootstrap iterations. Used only if **graph** = -1. |
+    | **graph_subsampling_power** = 0.001| Power for the approximation method. Used only if **graph** = -1.|
+    | **graph_subsampling_constant** = 10| Constant for the approximation method. Used only if **graph** = -1.|
     | **cover_type** = "functional"| String specifying the cover. Either "functional" or "Voronoi". |
     | **filter** = 0| Filter function. Either an integer, in which case the corresponding coordinate is used, or a numpy array specifying the filter values on each node. Not used if **cover_type** = "Voronoi".|
     | **resolution** = -1| Resolution of intervals. If -1, it is computed automatically. Not used if **cover_type** = "Voronoi".|
@@ -187,9 +217,9 @@ Currently available classes are:
     | **clustering** = sklearn.cluster.DBSCAN()| Clustering method. |
     | **mask** = 0| Threshold on the node sizes.|
     | **verbose** = False| Whether to print info or not.|
-    | **beta** = 0| power for the approximation method. Used only if **resolutions** = -1.|
-    | **C** = 100| constant for the approximation method. Used only if **resolutions** = -1.|
-    | **N** = 100| number of bootstrap iterations. Used only if **resolutions** = -1.|
+    | **beta** = 0| Power for the approximation method. Used only if **resolutions** = -1.|
+    | **C** = 100| Constant for the approximation method. Used only if **resolutions** = -1.|
+    | **N** = 100| Number of bootstrap iterations. Used only if **resolutions** = -1.|
 
 # Installing sklearn_tda
 
