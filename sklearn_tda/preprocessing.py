@@ -67,10 +67,10 @@ class ProminentPoints(BaseEstimator, TransformerMixin):
             for i in range(num_diag):
                 diag = X[i]
                 if diag.shape[0] > 0:
-                    pers       = np.matmul(diag, [-1.0, 1.0])
+                    pers       = np.matmul(diag[:,:2], [-1.0, 1.0])
                     idx_thresh = pers >= self.threshold
                     thresh_diag, thresh_pers  = diag[idx_thresh.flatten()], pers[idx_thresh.flatten()]
-                    sort_index  = np.flip(np.argsort(thresh_pers, axis = None),0)
+                    sort_index  = np.flip(np.argsort(thresh_pers, axis=None), 0)
                     if self.point_type == "upper":
                         new_diag = thresh_diag[sort_index[:min(self.num_pts, thresh_diag.shape[0])],:]
                     if self.point_type == "lower":
