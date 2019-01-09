@@ -190,5 +190,5 @@ class PersistenceFisherKernel(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, X):
-        return np.exp(self.pf_.transform(X)/self.bandwidth_)
+        return np.exp(-self.pf_.transform(X)/self.bandwidth_)
 
