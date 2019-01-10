@@ -30,7 +30,7 @@ class DiagramPreprocessor(BaseEstimator, TransformerMixin):
         self.use    = use
 
     def fit(self, X, y=None):
-        if self.use == True:
+        if self.use:
             if len(X) == 1:
                 P = X[0]
             else:
@@ -39,7 +39,7 @@ class DiagramPreprocessor(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, X):
-        if self.use == True:
+        if self.use:
             Xfit, num_diag = [], len(X)
             for i in range(num_diag):
                 diag = X[i]
@@ -58,11 +58,11 @@ class ProminentPoints(BaseEstimator, TransformerMixin):
         self.use        = use
         self.point_type = point_type
 
-    def fit(self, X, y = None):
+    def fit(self, X, y=None):
         return self
 
     def transform(self, X):
-        if self.use == True:
+        if self.use:
             Xfit, num_diag = [], len(X)
             for i in range(num_diag):
                 diag = X[i]
@@ -87,7 +87,7 @@ class DiagramSelector(BaseEstimator, TransformerMixin):
     def __init__(self, limit=np.inf, point_type="finite"):
         self.limit, self.point_type = limit, point_type
 
-    def fit(self, X, y = None):
+    def fit(self, X, y=None):
         return self
 
     def transform(self, X):
@@ -105,7 +105,7 @@ class DiagramSelector(BaseEstimator, TransformerMixin):
                 diag = X[i]
                 if diag.shape[0] != 0:
                     idx_ess = diag[:,1] == self.limit
-                    Xfit.append(np.reshape(diag[:,0][idx_ess],[-1,1]))
+                    Xfit.append(np.delete(diag,1,1)[idx_ess,:])
                 else:
-                    Xfit.append(diag[:,:1])
+                    Xfit.append(np.delete(diag,1,1))
         return Xfit

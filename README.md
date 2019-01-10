@@ -204,7 +204,7 @@ Currently available classes are:
     | **verbose** = False| Whether to print info or not. |
     | **input** = "point cloud"| Specifies the input type. Either "point cloud" or "distance matrix". If "distance matrix", some class methods are unavailable.|
 
-  * **Mapper**: implementation of the [Mapper](https://research.math.osu.edu/tgda/mapperPBG.pdf).
+  * **MapperComplex**: implementation of the [Mapper](https://research.math.osu.edu/tgda/mapperPBG.pdf).
 
     Parameters
 

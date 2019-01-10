@@ -62,17 +62,17 @@ with open(args.file, 'r') as f:
 
     for i in range(0,num_nodes):
         point = [float(j) for j in f.readline().split(" ")]
-        nodes[  str(int(point[0]))  ] = [  int(point[0]), point[1], int(point[2])  ]
-        links[  str(int(point[0]))  ] = []
-        custom[  int(point[0])  ] = point[1]
-
-    m = min([custom[i] for i in range(0,num_nodes)])
-    M = max([custom[i] for i in range(0,num_nodes)])
+        nodes[str(int(point[0]))] = [int(point[0]), point[1], int(point[2])]
+        links[str(int(point[0]))] = []
+        custom[int(point[0])] = point[1]
+    
+    m = min([custom[i] for i in custom.keys()])
+    M = max([custom[i] for i in custom.keys()])
 
     for i in range(0,num_edges):
         edge = [int(j) for j in f.readline().split(" ")]
-        links[  str(edge[0])  ].append(  str(edge[1])  )
-        links[  str(edge[1])  ].append(  str(edge[0])  )
+        links[str(edge[0])].append(str(edge[1]))
+        links[str(edge[1])].append(str(edge[0]))
 
     network["nodes"] = nodes
     network["links"] = links
