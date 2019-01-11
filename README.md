@@ -234,7 +234,7 @@ For now, the package has to be compiled from source. You have to
 
 * download the code with:
 ```shell
-git clone https://github.com/MathieuCarriere/sklearn_tda
+git clone --recursive https://github.com/MathieuCarriere/sklearn_tda
 ```
 * move to the directory:
 ```shell
