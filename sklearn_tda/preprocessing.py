@@ -52,11 +52,13 @@ class DiagramPreprocessor(BaseEstimator, TransformerMixin):
 
 class ProminentPoints(BaseEstimator, TransformerMixin):
 
-    def __init__(self, use=False, num_pts=10, threshold=-1, point_type="upper"):
+    def __init__(self, use=False, num_pts=10, threshold=-1, location="upper", padding=False, point_type="finite"):
         self.num_pts    = num_pts
         self.threshold  = threshold
         self.use        = use
+        self.location   = location
         self.point_type = point_type
+        self.padding    = padding
 
     def fit(self, X, y=None):
         return self
@@ -66,18 +68,39 @@ class ProminentPoints(BaseEstimator, TransformerMixin):
             Xfit, num_diag = [], len(X)
             for i in range(num_diag):
                 diag = X[i]
-                if diag.shape[0] > 0:
-                    pers       = np.matmul(diag[:,:2], [-1.0, 1.0])
-                    idx_thresh = np.abs(pers) >= self.threshold
-                    thresh_diag, thresh_pers  = diag[idx_thresh.flatten()], pers[idx_thresh.flatten()]
-                    sort_index  = np.flip(np.argsort(thresh_pers, axis=None), 0)
-                    if self.point_type == "upper":
-                        new_diag = thresh_diag[sort_index[:min(self.num_pts, thresh_diag.shape[0])],:]
-                    if self.point_type == "lower":
-                        new_diag = np.concatenate( [ thresh_diag[sort_index[min(self.num_pts, thresh_diag.shape[0]):],:], diag[~idx_thresh.flatten()] ], axis=0)
-                    Xfit.append(new_diag)
+
+                if self.point_type == "finite":
+                    if diag.shape[0] > 0:
+                        pers       = np.matmul(diag[:,:2], [-1.0, 1.0])
+                        idx_thresh = np.abs(pers) >= self.threshold
+                        thresh_diag, thresh_pers  = diag[idx_thresh.flatten()], pers[idx_thresh.flatten()]
+                        sort_index  = np.flip(np.argsort(thresh_pers, axis=None), 0)
+                        if self.location == "upper":
+                            new_diag = thresh_diag[sort_index[:min(self.num_pts, thresh_diag.shape[0])],:]
+                        if self.location == "lower":
+                            new_diag = np.concatenate( [ thresh_diag[sort_index[min(self.num_pts, thresh_diag.shape[0]):],:], diag[~idx_thresh.flatten()] ], axis=0)
+                    else:
+                        new_diag = diag
+
                 else:
-                    Xfit.append(diag)
+                    if diag.shape[0] > 0:
+                        birth      = diag[:,:1]
+                        idx_thresh = birth >= self.threshold
+                        thresh_diag, thresh_birth  = diag[idx_thresh.flatten()], birth[idx_thresh.flatten()]
+                        if self.location == "upper":
+                            new_diag = thresh_diag[:min(self.num_pts, thresh_diag.shape[0]),:]
+                        if self.location == "lower":
+                            new_diag = np.concatenate( [ thresh_diag[min(self.num_pts, thresh_diag.shape[0]):,:], diag[~idx_thresh.flatten()] ], axis=0)
+                    else:
+                        new_diag = diag
+
+                if self.padding:
+                    diag_pad = np.zeros([self.num_pts, diag.shape[1]+1])
+                    diag_pad[:new_diag.shape[0],:diag.shape[1]] = new_diag
+                    diag_pad[:new_diag.shape[0], diag.shape[1]] = np.ones(new_diag.shape[0])
+                    new_diag = diag_pad
+
+                Xfit.append(new_diag)                    
         else:
             Xfit = X
         return Xfit
