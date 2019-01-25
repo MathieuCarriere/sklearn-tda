@@ -21,9 +21,12 @@ class BirthPersistenceTransform(BaseEstimator, TransformerMixin):
 
     def transform(self, X):
         if self.use:
-            return np.tensordot(X, np.array([[1.0, -1.0],[0.0, 1.0]]), 1)
+            Xfit = []
+            for dgm in X:
+                Xfit.append(np.concatenate([np.matmul(dgm[:,:2], np.array([[1.0, -1.0],[0.0, 1.0]])), dgm[:,2:]], axis=1))
         else:
-            return X
+            Xfit = X
+        return Xfit
 
 
 class DiagramPreprocessor(BaseEstimator, TransformerMixin):
