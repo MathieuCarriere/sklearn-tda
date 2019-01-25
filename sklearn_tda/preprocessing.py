@@ -13,14 +13,17 @@ from sklearn.preprocessing import StandardScaler
 
 class BirthPersistenceTransform(BaseEstimator, TransformerMixin):
 
-    def __init__(self):
-        return None
+    def __init__(self, use=False):
+        self.use = use
 
     def fit(self, X, y=None):
         return self
 
     def transform(self, X):
-        return np.tensordot(X, np.array([[1.0, -1.0],[0.0, 1.0]]), 1)
+        if self.use:
+            return np.tensordot(X, np.array([[1.0, -1.0],[0.0, 1.0]]), 1)
+        else:
+            return X
 
 
 class DiagramPreprocessor(BaseEstimator, TransformerMixin):
@@ -50,15 +53,36 @@ class DiagramPreprocessor(BaseEstimator, TransformerMixin):
             Xfit = X
         return Xfit
 
+class Padding(BaseEstimator, TransformerMixin):
+
+    def __init__(self, use=False):
+        self.use = use
+
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X):
+        if self.use:
+            Xfit, num_diag = [], len(X)
+            max_card = max([len(diag) for diag in X])
+            for diag in X:
+                [num_pts, dim] = diag.shape
+                diag_pad = np.zeros([max_card, dim+1])
+                diag_pad[:num_pts,:dim] = diag
+                diag_pad[:num_pts, dim] = np.ones(num_pts)
+                Xfit.append(diag_pad)                    
+        else:
+            Xfit = X
+        return Xfit
+
 class ProminentPoints(BaseEstimator, TransformerMixin):
 
-    def __init__(self, use=False, num_pts=10, threshold=-1, location="upper", padding=False, point_type="finite"):
+    def __init__(self, use=False, num_pts=10, threshold=-1, location="upper", point_type="finite"):
         self.num_pts    = num_pts
         self.threshold  = threshold
         self.use        = use
         self.location   = location
         self.point_type = point_type
-        self.padding    = padding
 
     def fit(self, X, y=None):
         return self
@@ -68,11 +92,10 @@ class ProminentPoints(BaseEstimator, TransformerMixin):
             Xfit, num_diag = [], len(X)
             for i in range(num_diag):
                 diag = X[i]
-
                 if self.point_type == "finite":
                     if diag.shape[0] > 0:
-                        pers       = np.matmul(diag[:,:2], [-1.0, 1.0])
-                        idx_thresh = np.abs(pers) >= self.threshold
+                        pers       = np.abs(np.matmul(diag[:,:2], [-1.0, 1.0]))
+                        idx_thresh = pers >= self.threshold
                         thresh_diag, thresh_pers  = diag[idx_thresh.flatten()], pers[idx_thresh.flatten()]
                         sort_index  = np.flip(np.argsort(thresh_pers, axis=None), 0)
                         if self.location == "upper":
@@ -93,12 +116,6 @@ class ProminentPoints(BaseEstimator, TransformerMixin):
                             new_diag = np.concatenate( [ thresh_diag[min(self.num_pts, thresh_diag.shape[0]):,:], diag[~idx_thresh.flatten()] ], axis=0)
                     else:
                         new_diag = diag
-
-                if self.padding:
-                    diag_pad = np.zeros([self.num_pts, diag.shape[1]+1])
-                    diag_pad[:new_diag.shape[0],:diag.shape[1]] = new_diag
-                    diag_pad[:new_diag.shape[0], diag.shape[1]] = np.ones(new_diag.shape[0])
-                    new_diag = diag_pad
 
                 Xfit.append(new_diag)                    
         else:
