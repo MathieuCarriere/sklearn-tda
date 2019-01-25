@@ -12,11 +12,15 @@ Clustering methods from TDA (Mapper and Graph Induced Complex) are also implemen
 
 Currently available classes are: 
 
-  * **BirthPersistenceTransform**: applies the affine transformation (x,y) -> (x,y-x) to the diagrams.
+  * **BirthPersistenceTransform**: apply the affine transformation (x,y) -> (x,y-x) to the diagrams.
 
-    Parameters: None
+    Parameters:
 
-  * **DiagramPreprocessor**: applies a scaler to the diagrams (such as scalers from [scikit-learn](http://scikit-learn.org/)).
+    | **name** | **description** |
+    | --- | --- |
+    | **use** = False | Whether to use the class or not. |
+
+  * **DiagramPreprocessor**: apply a scaler to the diagrams (such as scalers from [scikit-learn](http://scikit-learn.org/)).
 
     Parameters:
 
@@ -25,19 +29,29 @@ Currently available classes are:
     | **use** = False | Whether to use the class or not. |
     | **scaler** = sklearn.preprocessing.StandardScaler() | Scaler to be fit on the diagrams. |
 
-  * **ProminentPoints**: removes points close to the diagonal.
+  * **ProminentPoints**: remove points close to the diagonal.
 
     Parameters:
 
     | **name** | **description** |
     | --- | --- |
     | **use** = False|     Whether to use the class or not. |
-    | **num_pts** = 10|    Cardinality threshold (points are ordered by persistence). |
+    | **num_pts** = 10|    Cardinality threshold. |
     | **threshold** = -1|  Distance-to-diagonal threshold. |
-    | **point_type** = "upper"|  Whether to keep the points above ("upper") or below ("lower") the previous thresholds. |
+    | **location** = "upper"|  Whether to keep the points above ("upper") or below ("lower") the previous thresholds. |
+    | **point_type** = "finite"|  Specifies the input point type. Either "finite" or "essential". If "finite", the output points are ordered by persistence. |
+
+  * **Padding**: add dummy points to each diagram so that they all have the same cardinality. All points are given an additional coordinate
+    indicating if the point was added after padding (0) or already present before applying this class (1).
+
+    Parameters:
+
+    | **name** | **description** |
+    | --- | --- |
+    | **use** = False|     Whether to use the class or not. |
     
 
-  * **DiagramSelector**: returns the finite or essential points of the diagrams.
+  * **DiagramSelector**: return the finite or essential points of the diagrams.
 
      Parameters:
 
