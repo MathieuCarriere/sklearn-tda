@@ -27,7 +27,7 @@ Currently available classes are:
     | **name** | **description** |
     | --- | --- |
     | **use** = False | Whether to use the class or not. |
-    | **scaler** = sklearn.preprocessing.StandardScaler() | Scaler to be fit on the diagrams. |
+    | **scalers** = [] | List of scalers to be fit on the diagrams. Each element is a tuple whose first element is a list of coordinates and second element is a scaler (such as sklearn.preprocessing.MinMaxScaler()) for these coordinates.  |
 
   * **ProminentPoints**: remove points close to the diagonal.
 

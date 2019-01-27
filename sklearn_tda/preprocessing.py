@@ -31,9 +31,9 @@ class BirthPersistenceTransform(BaseEstimator, TransformerMixin):
 
 class DiagramPreprocessor(BaseEstimator, TransformerMixin):
 
-    def __init__(self, use=False, scaler=StandardScaler()):
-        self.scaler = scaler
-        self.use    = use
+    def __init__(self, use=False, scalers=[]):
+        self.scalers = scalers
+        self.use     = use
 
     def fit(self, X, y=None):
         if self.use:
@@ -41,20 +41,19 @@ class DiagramPreprocessor(BaseEstimator, TransformerMixin):
                 P = X[0]
             else:
                 P = np.concatenate(X,0)
-            self.scaler.fit(P)
+            for (indices, scaler) in self.scalers:
+                scaler.fit(P[:,indices])
         return self
 
     def transform(self, X):
         if self.use:
-            Xfit, num_diag = [], len(X)
+            num_diag = len(X)
             for i in range(num_diag):
                 diag = X[i]
                 if diag.shape[0] > 0:
-                    diag = self.scaler.transform(diag)
-                Xfit.append(diag)
-        else:
-            Xfit = X
-        return Xfit
+                    for (indices, scaler) in self.scalers:
+                        diag[:,indices] = scaler.transform(diag[:,indices])
+        return X
 
 class Padding(BaseEstimator, TransformerMixin):
 
