@@ -72,8 +72,8 @@ class PersistenceWeightedGaussianKernel(BaseEstimator, TransformerMixin):
         self.ws_ = []
         if self.use_pss_:
             for i in range(len(self.diagrams_)):
-                op_D = np.tensordot(self.diagrams_[i], np.array([[0.0,1.0], [1.0,0.0]]), 1)
-                self.diagrams_[i] = np.concatenate([self.diagrams_[i], op_D], 0)
+                op_D = np.matmul(self.diagrams_[i], np.array([[0.,1.], [1.,0.]]))
+                self.diagrams_[i] = np.concatenate([self.diagrams_[i], op_D], axis=0)
         self.ws_ = [ np.array([self.weight_(self.diagrams_[i][j,:]) for j in range(self.diagrams_[i].shape[0])]) for i in range(len(self.diagrams_)) ]
         if self.kernel_approx_ is not None:
             self.approx_ = np.concatenate([np.sum(np.multiply(self.ws_[i][:,np.newaxis], self.kernel_approx_.transform(self.diagrams_[i])), axis=0)[np.newaxis,:] for i in range(len(self.diagrams_))])
@@ -83,8 +83,8 @@ class PersistenceWeightedGaussianKernel(BaseEstimator, TransformerMixin):
         Xp = list(X)
         if self.use_pss_:
             for i in range(len(Xp)):
-                op_X = np.tensordot(Xp[i], np.array([[0.0,1.0], [1.0,0.0]]), 1)
-                Xp[i] = np.concatenate([Xp[i], op_X], 0)
+                op_X = np.matmul(Xp[i], np.array([[0.,1.], [1.,0.]]))
+                Xp[i] = np.concatenate([Xp[i], op_X], axis=0)
         Xfit = np.zeros((len(Xp), len(self.diagrams_)))
         if self.diagrams_ == Xp:
             if self.kernel_approx_ is not None:

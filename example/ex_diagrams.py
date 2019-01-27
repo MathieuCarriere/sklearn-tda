@@ -3,9 +3,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.kernel_approximation import RBFSampler
 
-D = np.array([[0.0,4.0],[1.0,2.0],[3.0,8.0],[6.0,8.0]])
+D = np.array([[0.,4.],[1.,2.],[3.,8.],[6.,8.]])
 plt.scatter(D[:,0],D[:,1])
-plt.plot([0.0,10.0],[0.0,10.0])
+plt.plot([0.,10.],[0.,10.])
 plt.show()
 
 diags = [D]
@@ -39,15 +39,15 @@ tv = TV.fit_transform(diags)
 print("Topological vector is " + str(tv[0,:]))
 
 diagsT = tda.DiagramPreprocessor(use=True, scalers=[([0,1], tda.BirthPersistenceTransform())]).fit_transform(diags)
-PI = tda.PersistenceImage(bandwidth=1.0, weight=lambda x: x[1], im_range=[0,10,0,10], resolution=[100,100])
+PI = tda.PersistenceImage(bandwidth=1., weight=lambda x: x[1], im_range=[0,10,0,10], resolution=[100,100])
 pi = PI.fit_transform(diagsT)
 plt.imshow(np.flip(np.reshape(pi[0], [100,100]), 0))
 plt.show()
 
 plt.scatter(D[:,0],D[:,1])
-D = np.array([[1.0,5.0],[3.0,6.0],[2.0,7.0]])
+D = np.array([[1.,5.],[3.,6.],[2.,7.]])
 plt.scatter(D[:,0],D[:,1])
-plt.plot([0.0,10.0],[0.0,10.0])
+plt.plot([0.,10.],[0.,10.])
 plt.show()
 
 diags2 = [D]

@@ -13,17 +13,14 @@ from sklearn.preprocessing import StandardScaler
 
 class BirthPersistenceTransform(BaseEstimator, TransformerMixin):
 
-    def __init__(self, use=False):
-        self.use = use
+    def __init__(self):
+        return None
 
     def fit(self, X, y=None):
         return self
 
     def transform(self, X):
-        if self.use:
-            return np.matmul(X, np.array([[1.0, -1.0],[0.0, 1.0]]))
-        else:
-            return X
+        return np.matmul(X, np.array([[1.0, -1.0],[0.0, 1.0]]))
 
 
 class DiagramPreprocessor(BaseEstimator, TransformerMixin):
@@ -43,14 +40,13 @@ class DiagramPreprocessor(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, X):
+        Xfit = [np.copy(d) for d in X]
         if self.use:
-            num_diag = len(X)
-            for i in range(num_diag):
-                diag = X[i]
-                if diag.shape[0] > 0:
+            for i in range(len(Xfit)):
+                if Xfit[i].shape[0] > 0:
                     for (indices, scaler) in self.scalers:
-                        diag[:,indices] = scaler.transform(diag[:,indices])
-        return X
+                        Xfit[i][:,indices] = scaler.transform(Xfit[i][:,indices])
+        return Xfit
 
 class Padding(BaseEstimator, TransformerMixin):
 
