@@ -14,11 +14,7 @@ Currently available classes are:
 
   * **BirthPersistenceTransform**: apply the affine transformation (x,y) -> (x,y-x) to the diagrams.
 
-    Parameters:
-
-    | **name** | **description** |
-    | --- | --- |
-    | **use** = False | Whether to use the class or not. |
+    Parameters: None.
 
   * **DiagramPreprocessor**: apply a scaler to the diagrams (such as scalers from [scikit-learn](http://scikit-learn.org/)).
 
