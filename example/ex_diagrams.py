@@ -32,13 +32,13 @@ plt.show()
 
 CP = tda.ComplexPolynomial(threshold=-1, F="T")
 cp = CP.fit_transform(diags)
-print(cp[0,:])
+print("Complex polynomial is " + str(cp[0,:]))
 
 TV = tda.TopologicalVector(threshold=-1)
 tv = TV.fit_transform(diags)
-print(tv[0,:])
+print("Topological vector is " + str(tv[0,:]))
 
-diagsT = tda.DiagramPreprocessor(use=True, scaler=tda.BirthPersistenceTransform()).fit_transform(diags)
+diagsT = tda.DiagramPreprocessor(use=True, scalers=[([0,1], tda.BirthPersistenceTransform())]).fit_transform(diags)
 PI = tda.PersistenceImage(bandwidth=1.0, weight=lambda x: x[1], im_range=[0,10,0,10], resolution=[100,100])
 pi = PI.fit_transform(diagsT)
 plt.imshow(np.flip(np.reshape(pi[0], [100,100]), 0))

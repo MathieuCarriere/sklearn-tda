@@ -22,8 +22,8 @@ class PersistenceImage(BaseEstimator, TransformerMixin):
 
     def fit(self, X, y=None):
         if np.isnan(self.im_range_[0]):
-            pre = DiagramPreprocessor(use=True, scaler=MinMaxScaler()).fit(X,y)
-            [mx,my],[Mx,My] = pre.scaler.data_min_, pre.scaler.data_max_
+            pre = DiagramPreprocessor(use=True, scalers=[([0,1], MinMaxScaler())]).fit(X,y)
+            [mx,my],[Mx,My] = pre.scalers[0][1].data_min_, pre.scalers[0][1].data_max_
             self.im_range_ = [mx, Mx, my, My]
         return self
 
@@ -53,8 +53,8 @@ class Landscape(BaseEstimator, TransformerMixin):
 
     def fit(self, X, y=None):
         if np.isnan(self.ls_range_[0]):
-            pre = DiagramPreprocessor(use=True, scaler=MinMaxScaler()).fit(X,y)
-            [mx,my],[Mx,My] = pre.scaler.data_min_, pre.scaler.data_max_
+            pre = DiagramPreprocessor(use=True, scalers=[([0,1], MinMaxScaler())]).fit(X,y)
+            [mx,my],[Mx,My] = pre.scalers[0][1].data_min_, pre.scalers[0][1].data_max_
             self.ls_range_ = [mx, My]
         return self
 
@@ -108,8 +108,8 @@ class Silhouette(BaseEstimator, TransformerMixin):
 
     def fit(self, X, y=None):
         if np.isnan(self.sh_range_[0]) == True:
-            pre = DiagramPreprocessor(use=True, scaler=MinMaxScaler()).fit(X,y)
-            [mx,my],[Mx,My] = pre.scaler.data_min_, pre.scaler.data_max_
+            pre = DiagramPreprocessor(use=True, scalers=[([0,1], MinMaxScaler())]).fit(X,y)
+            [mx,my],[Mx,My] = pre.scalers[0][1].data_min_, pre.scalers[0][1].data_max_
             self.sh_range_ = [mx, My]
         return self
 
@@ -159,8 +159,8 @@ class BettiCurve(BaseEstimator, TransformerMixin):
 
     def fit(self, X, y=None):
         if np.isnan(self.bc_range_[0]):
-            pre = DiagramPreprocessor(use=True, scaler=MinMaxScaler()).fit(X,y)
-            [mx,my],[Mx,My] = pre.scaler.data_min_, pre.scaler.data_max_
+            pre = DiagramPreprocessor(use=True, scalers=[([0,1], MinMaxScaler())]).fit(X,y)
+            [mx,my],[Mx,My] = pre.scalers[0][1].data_min_, pre.scalers[0][1].data_max_
             self.bc_range_ = [mx, My]
         return self
 
