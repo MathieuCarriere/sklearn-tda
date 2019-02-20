@@ -220,7 +220,9 @@ Currently available classes are:
 
     | **name** | **description** |
     | --- | --- |
+    | **input** = "point cloud" | String specifying input type. Either "point cloud" or "distance matrix". |
     | **filters** = np.array([[0]]) | Numpy array specifying the filter values. Each row is a point and each column is a filter dimension. If only one integer is given per column, the corresponding coordinate is used as filter. |
+    | **filter_bnds** = "auto" | Numpy array specifying the lower and upper limits of each filter. If "auto", they are automatically computed.  |
     | **colors** = np.array([[0]]) | Numpy array specifying the color values. Each row is a point and each column is a color dimension. If only one integer is given per column, the corresponding coordinate is used as color. |
     | **resolutions** = -1| List of resolutions for each filter dimension. If -1, they are computed automatically. |
     | **gains** = 0.3| List of gains for each filter dimension. If single number, the same gain is always used. |
