@@ -132,7 +132,7 @@ class MapperComplex(BaseEstimator, TransformerMixin):
         for i in range(num_filters):
             f, r, g = filters[:,i], resolutions[i], gains[i]
             if self.filter_bnds_ == "auto":
-                min_f, max_f = np.min(f), np.max(f)  else self.filter_bnds_[i,0], self.filter_bnds_[i,1]
+                min_f, max_f = np.min(f), np.max(f)
                 epsilon = pow(10, np.log10(abs(max_f)) - 5)
                 interval_endpoints, l = np.linspace(min_f - epsilon, max_f + epsilon, num=r+1, retstep=True)
             else:
