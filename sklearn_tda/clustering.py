@@ -6,7 +6,7 @@ All rights reserved
 import numpy as np
 import itertools
 
-from .metrics                import WassersteinDistance
+from .metrics                import BottleneckDistance
 from sklearn.base            import BaseEstimator, TransformerMixin
 from sklearn.cluster         import DBSCAN
 from sklearn.metrics         import pairwise_distances
@@ -266,7 +266,7 @@ class MapperComplex(BaseEstimator, TransformerMixin):
                     if dgm2[nd][pt][0] <= 1:
                         D2.append([dgm2[nd][pt][1][0], dgm2[nd][pt][1][1]])
                 D1, D2 = np.array(D1), np.array(D2)
-                bottle = WassersteinDistance(wasserstein=np.inf).fit([D1])
+                bottle = BottleneckDistance().fit([D1])
                 df = max(df, bottle.transform([D2])[0][0])
             distribution.append(df)
         return distribution

@@ -85,10 +85,10 @@ X = SW.fit(diags)
 Y = SW.transform(diags2)
 print("SW kernel is " + str(Y[0][0]))
 
-W = tda.WassersteinDistance(wasserstein=1, delta=.001)
+W = tda.BottleneckDistance(epsilon=.001)
 X = W.fit(diags)
 Y = W.transform(diags2)
-print("1-Wasserstein distance is " + str(Y[0][0]))
+print("Bottleneck distance is " + str(Y[0][0]))
 
 PF = tda.PersistenceFisherKernel(bandwidth_fisher=1., bandwidth=1.)
 X = PF.fit(diags)

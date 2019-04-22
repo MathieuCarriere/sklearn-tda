@@ -164,14 +164,13 @@ Currently available classes are:
 
 Currently available classes are:
 
-  * **WassersteinDistance**: wrapper for [Hera](https://bitbucket.org/grey_narn/hera/src). **Requires cython!!**
+  * **BottleneckDistance**: wrapper for bottleneck distance module of Gudhi. **Requires Gudhi!!**
 
     Parameters:
 
     | **name** | **description** |
     | --- | --- |
-    |**wasserstein** = 1| Index of Wasserstein distance. Set to np.inf for bottleneck distance.|
-    |**delta** = 0.001| Approximation error.|
+    |**epsilon** = 0.001| Approximation error.|
 
   * **SlicedWassersteinDistance**: implementation of [Sliced Wasserstein distance](http://proceedings.mlr.press/v70/carriere17a.html).
 
@@ -214,7 +213,7 @@ Currently available classes are:
     | **verbose** = False| Whether to print info or not. |
     | **input** = "point cloud"| Specifies the input type. Either "point cloud" or "distance matrix". If "distance matrix", some class methods are unavailable.|
 
-  * **MapperComplex**: implementation of the [Mapper](https://research.math.osu.edu/tgda/mapperPBG.pdf).
+  * **MapperComplex**: implementation of the [Mapper](https://research.math.osu.edu/tgda/mapperPBG.pdf). **Requires Gudhi!!**
 
     Parameters
 
@@ -240,13 +239,12 @@ The sklearn_tda library requires:
 * python [>=2.7, >=3.5]
 * numpy [>= 1.8.2]
 * scikit-learn
-* cython (optional)
 
 For now, the package has to be compiled from source. You have to 
 
 * download the code with:
 ```shell
-git clone --recursive https://github.com/MathieuCarriere/sklearn_tda
+git clone https://github.com/MathieuCarriere/sklearn_tda
 ```
 * move to the directory:
 ```shell

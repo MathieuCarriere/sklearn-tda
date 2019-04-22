@@ -1,5 +1,4 @@
 name = "sklearn_tda"
-version__ = 0
 
 from .preprocessing import *
 from .kernel_methods import *
@@ -13,18 +12,22 @@ __all__ = [
     "BettiCurve",
     "Silhouette",
     "TopologicalVector",
+    "ComplexPolynomial",
 
     "DiagramSelector",
     "ProminentPoints",
     "DiagramPreprocessor",
+    "Padding",
     "BirthPersistenceTransform",
 
     "SlicedWassersteinKernel",
     "PersistenceWeightedGaussianKernel",
     "PersistenceScaleSpaceKernel",
+    "PersistenceFisherKernel",
 
-    "WassersteinDistance",
+    "BottleneckDistance",
     "SlicedWassersteinDistance",
+    "PersistenceFisherDistance", 
 
     "MapperComplex",
     "GraphInducedComplex"
