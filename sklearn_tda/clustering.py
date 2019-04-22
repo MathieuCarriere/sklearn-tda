@@ -20,7 +20,7 @@ try:
 
 except ImportError:
     USE_GUDHI = False
-    print("Gudhi not found--GraphInducedComplex not available")
+    print("Gudhi not found--GraphInducedComplex and MapperComplex not available")
 
 #############################################
 # Clustering ################################
