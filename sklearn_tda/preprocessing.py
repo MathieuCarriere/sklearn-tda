@@ -126,7 +126,7 @@ class DiagramSelector(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, X):
-	if self.use:
+        if self.use:
             Xfit, num_diag = [], len(X)
             if self.point_type == "finite":
                 for i in range(num_diag):
