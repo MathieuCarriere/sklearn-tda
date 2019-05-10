@@ -20,7 +20,7 @@ class BirthPersistenceTransform(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, X):
-        return np.matmul(X, np.array([[1.0, -1.0],[0.0, 1.0]]))
+        return np.matmul(X, np.array([[1., -1.],[0., 1.]]))
 
 
 class DiagramPreprocessor(BaseEstimator, TransformerMixin):
@@ -89,7 +89,7 @@ class ProminentPoints(BaseEstimator, TransformerMixin):
                 diag = X[i]
                 if self.point_type == "finite":
                     if diag.shape[0] > 0:
-                        pers       = np.abs(np.matmul(diag[:,:2], [-1.0, 1.0]))
+                        pers       = np.abs(np.matmul(diag[:,:2], [-1., 1.]))
                         idx_thresh = pers >= self.threshold
                         thresh_diag, thresh_pers  = diag[idx_thresh.flatten()], pers[idx_thresh.flatten()]
                         sort_index  = np.flip(np.argsort(thresh_pers, axis=None), 0)
@@ -119,28 +119,31 @@ class ProminentPoints(BaseEstimator, TransformerMixin):
 
 class DiagramSelector(BaseEstimator, TransformerMixin):
 
-    def __init__(self, limit=np.inf, point_type="finite"):
-        self.limit, self.point_type = limit, point_type
+    def __init__(self, use=False, limit=np.inf, point_type="finite"):
+        self.use, self.limit, self.point_type = use, limit, point_type
 
     def fit(self, X, y=None):
         return self
 
     def transform(self, X):
-        Xfit, num_diag = [], len(X)
-        if self.point_type == "finite":
-            for i in range(num_diag):
-                diag = X[i]
-                if diag.shape[0] != 0:
-                    idx_fin = diag[:,1] != self.limit
-                    Xfit.append(diag[idx_fin,:])
-                else:
-                    Xfit.append(diag)
-        if self.point_type == "essential":
-            for i in range(num_diag):
-                diag = X[i]
-                if diag.shape[0] != 0:
-                    idx_ess = diag[:,1] == self.limit
-                    Xfit.append(np.delete(diag,1,1)[idx_ess,:])
-                else:
-                    Xfit.append(np.delete(diag,1,1))
+	if self.use:
+            Xfit, num_diag = [], len(X)
+            if self.point_type == "finite":
+                for i in range(num_diag):
+                    diag = X[i]
+                    if diag.shape[0] != 0:
+                        idx_fin = diag[:,1] != self.limit
+                        Xfit.append(diag[idx_fin,:])
+                    else:
+                        Xfit.append(diag)
+            if self.point_type == "essential":
+                for i in range(num_diag):
+                    diag = X[i]
+                    if diag.shape[0] != 0:
+                        idx_ess = diag[:,1] == self.limit
+                        Xfit.append(np.delete(diag,1,1)[idx_ess,:])
+                    else:
+                        Xfit.append(np.delete(diag,1,1))
+        else:
+            Xfit = X
         return Xfit
