@@ -282,85 +282,85 @@ class GraphInducedComplex(BaseEstimator, TransformerMixin):
         if USE_GUDHI == False:
             raise ImportError("Error: Gudhi not imported")
 
-        self.cc = gd.CoverComplex()
-        self.cc.set_type("GIC")
-        self.cc.set_mask(mask)
-        self.cc.set_verbose(verbose)
-        self.graph, self.graph_subsampling, self.graph_subsampling_constant, self.graph_subsampling_power = graph, graph_subsampling, graph_subsampling_constant, graph_subsampling_power
-        self.cover_type, self.filter, self.resolution, self.gain, self.Voronoi_subsampling = cover_type, filter, resolution, gain, Voronoi_subsampling
-        self.color, self.input = color, input
+        self.cc_ = gd.CoverComplex()
+        self.cc_.set_type("GIC")
+        self.cc_.set_mask(mask)
+        self.cc_.set_verbose(verbose)
+        self.graph_, self.graph_subsampling_, self.graph_subsampling_constant_, self.graph_subsampling_power_ = graph, graph_subsampling, graph_subsampling_constant, graph_subsampling_power
+        self.cover_type_, self.filter_, self.resolution_, self.gain_, self.Voronoi_subsampling_ = cover_type, filter, resolution, gain, Voronoi_subsampling
+        self.color_, self.input_ = color, input
 
     def fit(self, X, y=None):
 
         # Read input
-        if self.input == "point cloud":
-            self.cc.set_point_cloud_from_range(X)
-        elif self.input == "distance matrix":
-            self.cc.set_distances_from_range(X)
+        if self.input_ == "point cloud":
+            self.cc_.set_point_cloud_from_range(X)
+        elif self.input_ == "distance matrix":
+            self.cc_.set_distances_from_range(X)
 
         # Set color function
-        if type(self.color) is int:
-            self.cc.set_color_from_coordinate(self.color)
-        if type(self.color) is np.ndarray:
-            self.cc.set_color_from_range(self.color)
+        if type(self.color_) is int:
+            self.cc_.set_color_from_coordinate(self.color_)
+        if type(self.color_) is np.ndarray:
+            self.cc_.set_color_from_range(self.color_)
 
         # Set underlying neighborhood graph for connected components
-        if self.graph == -1:
-            self.cc.set_subsampling(self.graph_subsampling_constant, self.graph_subsampling_power)
-            self.cc.set_graph_from_automatic_rips(self.graph_subsampling)
+        if self.graph_ == -1:
+            self.cc_.set_subsampling(self.graph_subsampling_constant_, self.graph_subsampling_power_)
+            self.cc_.set_graph_from_automatic_rips(self.graph_subsampling_)
         else:
-            self.cc.set_graph_from_rips(self.graph)
+            self.cc_.set_graph_from_rips(self.graph_)
 
         # Set cover of point cloud
-        if self.cover_type == "functional":
+        if self.cover_type_ == "functional":
             ###### Function values
-            if type(self.filter) is int:
-                self.cc.set_function_from_coordinate(self.filter)
-            if type(self.filter) is np.ndarray:
-                self.cc.set_function_from_range(self.filter)
+            if type(self.filter_) is int:
+                self.cc_.set_function_from_coordinate(self.filter_)
+            if type(self.filter_) is np.ndarray:
+                self.cc_.set_function_from_range(self.filter_)
             ###### Gain
-            self.cc.set_gain(self.gain)
+            self.cc_.set_gain(self.gain_)
             ###### Resolution
-            if self.resolution == -1:
-                self.cc.set_automatic_resolution()
+            if self.resolution_ == -1:
+                self.cc_.set_automatic_resolution()
             else:
-                if type(self.resolution) is int:
-                    self.cc.set_resolution_with_interval_number(self.resolution)
+                if type(self.resolution_) is int:
+                    self.cc_.set_resolution_with_interval_number(self.resolution_)
                 else:
-                    self.cc.set_resolution_with_interval_length(self.resolution)
+                    self.cc_.set_resolution_with_interval_length(self.resolution_)
             ###### Cover computation
-            self.cc.set_cover_from_function()
-        if self.cover_type == "Voronoi":
-            self.cc.set_cover_from_Voronoi(self.Voronoi_subsampling)
+            self.cc_.set_cover_from_function()
+        if self.cover_type_ == "Voronoi":
+            self.cc_.set_cover_from_Voronoi(self.Voronoi_subsampling_)
 
         # Compute simplices
-        self.cc.find_simplices()
-        self.cc.create_simplex_tree()
+        self.cc_.find_simplices()
+        self.cc_.create_simplex_tree()
 
         return self
 
     def print_result(self, output_type="txt"):
         if output_type == "txt":
-            self.cc.write_info()
+            self.cc_.write_info()
         if output_type == "dot":
-            self.cc.plot_dot()
+            self.cc_.plot_dot()
         if output_type == "off":
-            self.cc.plot_off()
+            self.cc_.plot_off()
 
     def compute_p_value(self, bootstrap=10):
-        self.cc.compute_distribution(bootstrap)
-        return self.cc.compute_p_value()
+        self.cc_.compute_distribution(bootstrap)
+        return self.cc_.compute_p_value()
 
     def compute_confidence_level_from_distance(self, bootstrap=10, distance=1.0):
-        self.cc.compute_distribution(bootstrap)
-        return self.cc.compute_confidence_level_from_distance(distance)
+        self.cc_.compute_distribution(bootstrap)
+        return self.cc_.compute_confidence_level_from_distance(distance)
 
     def compute_distance_from_confidence_level(self, bootstrap=10, alpha=0.1):
-        self.cc.compute_distribution(bootstrap)
-        return self.cc.compute_distance_from_confidence_level(alpha)
+        self.cc_.compute_distribution(bootstrap)
+        return self.cc_.compute_distance_from_confidence_level(alpha)
 
     def subpopulation(self, node_index=0):
-        return self.cc.subpopulation(node_index)
+        return self.cc_.subpopulation(node_index)
 
     def persistence_diagram(self):
-        return self.cc.compute_PD()
+        return self.cc_.compute_PD()
