@@ -20,7 +20,7 @@ try:
 
 except ImportError:
     USE_GUDHI = False
-    print("Gudhi not found--GraphInducedComplex and MapperComplex not available")
+    print("Gudhi not found: GraphInducedComplex and MapperComplex not available")
 
 #############################################
 # Clustering ################################
@@ -29,21 +29,21 @@ except ImportError:
 class NNClustering(BaseEstimator, TransformerMixin):
 
     def __init__(self, radius, metric="euclidean", inp="point cloud"):
-        self.radius_, self.metric_ = radius, metric
+        self.radius_, self.metric_, self.input_ = radius, metric, inp
 
     def fit_predict(self, X):
         if type(self.radius_) is int:
-            if inp == "point cloud":
+            if self.input_ == "point cloud":
                 adj = kneighbors_graph(X, n_neighbors=self.radius_, metric=self.metric_)
-            if inp == "distance matrix":
+            if self.input_ == "distance matrix":
                 adj = np.zeros(X.shape)
                 idxs = np.argpartition(X, self.radius_, axis=1)[:, :self.radius_]
                 for i in range(len(X)):
                     adj[i,idxs[i,:]] = np.ones(len(idxs[i]))                    
         else:
-            if inp == "point cloud":
+            if self.input_ == "point cloud":
                 adj = radius_neighbors_graph(X, radius=self.radius_, metric=self.metric_)
-            if inp == "distance matrix":
+            if self.input_ == "distance matrix":
                 adj = np.where(X <= self.radius_, np.ones(X.shape), np.zeros(X.shape))
         _, clusters = csgraph.connected_components(adj)
         return clusters
@@ -52,7 +52,7 @@ class NNClustering(BaseEstimator, TransformerMixin):
 class MapperComplex(BaseEstimator, TransformerMixin):
 
     def __init__(self, filters=np.array([[0]]), filter_bnds="auto", colors=np.array([[0]]), resolutions=-1, gains=.3, clustering=DBSCAN(), 
-                       mask=0, beta=0., C=100, N=100, inp="point cloud", verbose=False):
+                       mask=0, beta=0., C=10, N=100, inp="point cloud", verbose=False):
         self.filters_, self.filter_bnds_, self.resolutions_, self.gains_, self.colors_, self.clustering_ = filters, filter_bnds, resolutions, gains, colors, clustering
         self.mask_, self.verbose_ = mask, verbose
         self.input_, self.beta_, self.C_, self.N_ = inp, beta, C, N
