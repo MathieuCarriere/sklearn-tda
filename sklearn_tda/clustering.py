@@ -220,7 +220,7 @@ class MapperComplex(BaseEstimator, TransformerMixin):
         num_cols = self.clus_colors_[list(self.clus_colors_.keys())[0]].shape[0]
         for c in range(num_cols):
             col_vals = []
-            for key, elem in self.clus_colors.items():
+            for key, elem in self.clus_colors_.items():
                 col_vals.append(elem[c])
             st = gd.SimplexTree()
             list_simplices, list_vertices = self.st_.get_skeleton(1), self.st_.get_skeleton(0)
