@@ -29,22 +29,22 @@ except ImportError:
 class NNClustering(BaseEstimator, TransformerMixin):
 
     def __init__(self, radius, metric="euclidean", inp="point cloud"):
-        self.radius_, self.metric_, self.input_ = radius, metric, inp
+        self.radius, self.metric, self.input = radius, metric, inp
 
     def fit_predict(self, X):
-        if type(self.radius_) is int:
-            if self.input_ == "point cloud":
-                adj = kneighbors_graph(X, n_neighbors=self.radius_, metric=self.metric_)
-            if self.input_ == "distance matrix":
+        if type(self.radius) is int:
+            if self.input == "point cloud":
+                adj = kneighbors_graph(X, n_neighbors=self.radius, metric=self.metric)
+            if self.input == "distance matrix":
                 adj = np.zeros(X.shape)
-                idxs = np.argpartition(X, self.radius_, axis=1)[:, :self.radius_]
+                idxs = np.argpartition(X, self.radius, axis=1)[:, :self.radius]
                 for i in range(len(X)):
                     adj[i,idxs[i,:]] = np.ones(len(idxs[i]))                    
         else:
-            if self.input_ == "point cloud":
-                adj = radius_neighbors_graph(X, radius=self.radius_, metric=self.metric_)
-            if self.input_ == "distance matrix":
-                adj = np.where(X <= self.radius_, np.ones(X.shape), np.zeros(X.shape))
+            if self.input == "point cloud":
+                adj = radius_neighbors_graph(X, radius=self.radius, metric=self.metric)
+            if self.input == "distance matrix":
+                adj = np.where(X <= self.radius, np.ones(X.shape), np.zeros(X.shape))
         _, clusters = csgraph.connected_components(adj)
         return clusters
 
@@ -53,30 +53,30 @@ class MapperComplex(BaseEstimator, TransformerMixin):
 
     def __init__(self, filters=np.array([[0]]), filter_bnds="auto", colors=np.array([[0]]), resolutions=-1, gains=.3, clustering=DBSCAN(), 
                        mask=0, beta=0., C=10, N=100, inp="point cloud", verbose=False):
-        self.filters_, self.filter_bnds_, self.resolutions_, self.gains_, self.colors_, self.clustering_ = filters, filter_bnds, resolutions, gains, colors, clustering
-        self.mask_, self.verbose_ = mask, verbose
-        self.input_, self.beta_, self.C_, self.N_ = inp, beta, C, N
+        self.filters, self.filter_bnds, self.resolutions, self.gains, self.colors, self.clustering = filters, filter_bnds, resolutions, gains, colors, clustering
+        self.mask, self.verbose = mask, verbose
+        self.input, self.beta, self.C, self.N = inp, beta, C, N
 
     def get_optimal_parameters_for_hierarchical_clustering(self, X):
 
-        if self.filters_.shape[0] == 1 and self.input_ == "point cloud":
-            filters = X[:,self.filters_.flatten()]
+        if self.filters.shape[0] == 1 and self.input == "point cloud":
+            filters = X[:,self.filters.flatten()]
         else:
-            filters = self.filters_
+            filters = self.filters
 
         num_pts, num_filt, delta = X.shape[0], filters.shape[1], 0
-        m = int(  num_pts / np.exp((1+self.beta_) * np.log(np.log(num_pts)/np.log(self.C_)))  )
-        for _ in range(self.N_):
+        m = int(  num_pts / np.exp((1+self.beta) * np.log(np.log(num_pts)/np.log(self.C)))  )
+        for _ in range(self.N):
             subpop = np.random.choice(num_pts, size=m, replace=False)
-            if self.input_ == "point cloud":
+            if self.input == "point cloud":
                 d, _, _ = directed_hausdorff(X, X[subpop,:])
-            if self.input_ == "distance matrix":
+            if self.input == "distance matrix":
                 d = np.max(np.min(X[:,subpop], axis=1), axis=0)
-            delta += d/self.N_
+            delta += d/self.N
 
-        if self.input_ == "point cloud":
+        if self.input == "point cloud":
             pairwise = pairwise_distances(X, metric="euclidean")
-        if self.input_ == "distance matrix":
+        if self.input == "distance matrix":
             pairwise = X
         pairs = np.argwhere(pairwise <= delta)
         num_pairs = pairs.shape[0]
@@ -94,35 +94,35 @@ class MapperComplex(BaseEstimator, TransformerMixin):
 
     def fit(self, X, y=None):
 
-        if self.filters_.shape[0] == 1:
-            if self.input_ == "point cloud":
-                filters = X[:, self.filters_.flatten()]
+        if self.filters.shape[0] == 1:
+            if self.input == "point cloud":
+                filters = X[:, self.filters.flatten()]
             else:
                 print("Cannot set filters as coordinates when input is a distance matrix---using eccentricity instead")
                 filters = np.max(X, axis=1)[:,np.newaxis]
         else:
-            filters = self.filters_
+            filters = self.filters
 
-        if self.colors_.shape[0] == 1:
-            if self.input_ == "point cloud":
-                colors = X[:, self.colors_.flatten()]
+        if self.colors.shape[0] == 1:
+            if self.input == "point cloud":
+                colors = X[:, self.colors.flatten()]
             else:
                 print("Cannot set colors as coordinates when input is a distance matrix---using null function instead")
                 colors = np.zeros([X.shape[0],1])
         else:
-            colors = self.colors_
+            colors = self.colors
 
-        if isinstance(self.gains_, float):
-            gains = self.gains_ * np.ones([filters.shape[1]])
+        if isinstance(self.gains, float):
+            gains = self.gains * np.ones([filters.shape[1]])
         else:
-            gains = self.gains_
+            gains = self.gains
 
-        if self.resolutions_ == -1:
+        if self.resolutions == -1:
             delta, resolutions = self.get_optimal_parameters_for_hierarchical_clustering(X)
-            clustering = NNClustering(radius=delta, inp=self.input_)
+            clustering = NNClustering(radius=delta, inp=self.input)
         else:
-            resolutions = self.resolutions_
-            clustering  = self.clustering_
+            resolutions = self.resolutions
+            clustering  = self.clustering
 
         self.st_, self.graph_ = gd.SimplexTree(), []
         self.clus_colors_, self.clus_size_, self.clus_name_, self.clus_subpop_ = dict(), dict(), dict(), dict()
@@ -131,12 +131,12 @@ class MapperComplex(BaseEstimator, TransformerMixin):
         interval_inds, intersec_inds = np.empty(filters.shape), np.empty(filters.shape)
         for i in range(num_filters):
             f, r, g = filters[:,i], resolutions[i], gains[i]
-            if self.filter_bnds_ == "auto":
+            if self.filter_bnds == "auto":
                 min_f, max_f = np.min(f), np.max(f)
                 epsilon = pow(10, np.log10(abs(max_f)) - 5)
                 interval_endpoints, l = np.linspace(min_f - epsilon, max_f + epsilon, num=r+1, retstep=True)
             else:
-                min_f, max_f = self.filter_bnds_[i,0], self.filter_bnds_[i,1]
+                min_f, max_f = self.filter_bnds[i,0], self.filter_bnds[i,1]
                 interval_endpoints, l = np.linspace(min_f, max_f, num=r+1, retstep=True)
             intersec_endpoints = []
             for j in range(1, len(interval_endpoints)-1):
@@ -144,7 +144,7 @@ class MapperComplex(BaseEstimator, TransformerMixin):
                 intersec_endpoints.append(interval_endpoints[j] + g*l / (2 - 2*g))
             interval_inds[:,i] = np.digitize(f, interval_endpoints)
             intersec_inds[:,i] = 0.5 * (np.digitize(f, intersec_endpoints) + 1)
-            if self.verbose_:
+            if self.verbose:
                 print(interval_inds[:,i])
                 print(intersec_inds[:,i])
 
@@ -166,7 +166,7 @@ class MapperComplex(BaseEstimator, TransformerMixin):
                 else:
                     binned_data[pre_idx] = [i]
 
-        if self.verbose_:
+        if self.verbose:
             print(binned_data)
 
         cover = []
@@ -177,12 +177,12 @@ class MapperComplex(BaseEstimator, TransformerMixin):
         for preimage in binned_data:
 
             idxs = np.array(binned_data[preimage])
-            if self.input_ == "point cloud":
+            if self.input == "point cloud":
                 clusters = clustering.fit_predict(X[idxs,:])
-            if self.input_ == "distance matrix":
+            if self.input == "distance matrix":
                 clusters = clustering.fit_predict(X[idxs,:][:,idxs])
 
-            if self.verbose_:
+            if self.verbose:
                 print("clusters in preimage " + str(preimage) + " = " + str(clusters))
 
             num_clus_pre = np.max(clusters) + 1
@@ -206,11 +206,11 @@ class MapperComplex(BaseEstimator, TransformerMixin):
         for simplex in self.st_.get_skeleton(2):
             if len(simplex[0]) > 1:
                 idx1, idx2 = simplex[0][0], simplex[0][1]
-                if self.mask_ <= self.clus_size_[idx1] and self.mask_ <= self.clus_size_[idx2]:
+                if self.mask <= self.clus_size_[idx1] and self.mask <= self.clus_size_[idx2]:
                     self.graph_.append([simplex[0]])
             else:
                 clus_idx = simplex[0][0]
-                if self.mask_ <= self.clus_size_[clus_idx]:
+                if self.mask <= self.clus_size_[clus_idx]:
                     self.graph_.append([simplex[0], self.clus_colors_[clus_idx], self.clus_size_[clus_idx], self.clus_name_[clus_idx], self.clus_subpop_[clus_idx]])
 
         return self
@@ -243,16 +243,16 @@ class MapperComplex(BaseEstimator, TransformerMixin):
     def compute_distribution(self, X, N=100):
         num_pts, distribution = len(X), []
         for bootstrap_id in range(N):
-            if self.verbose_:
+            if self.verbose:
                 print(str(bootstrap_id) + "th iteration")
             idxs = np.random.choice(num_pts, size=num_pts, replace=True)
-            if self.input_ == "point cloud":
+            if self.input == "point cloud":
                 Xboot = X[idxs,:]
-            if self.input_ == "distance matrix":
+            if self.input == "distance matrix":
                 Xboot = X[idxs,:][:,idxs]
-            filters_boot = self.filters_[idxs,:] if self.filters_.shape[0] > 1 else self.filters_
-            colors_boot  = self.colors_[idxs,:]  if self.colors_.shape[0]  > 1 else self.colors_
-            resolutions_boot, gains_boot, clustering_boot = self.resolutions_, self.gains_, self.clustering_ 
+            filters_boot = self.filters[idxs,:] if self.filters.shape[0] > 1 else self.filters
+            colors_boot  = self.colors[idxs,:]  if self.colors.shape[0]  > 1 else self.colors
+            resolutions_boot, gains_boot, clustering_boot = self.resolutions, self.gains, self.clustering 
             Mboot = self.__class__(filters=filters_boot, colors=colors_boot, resolutions=resolutions_boot, gains=gains_boot, clustering=clustering_boot).fit(Xboot)
             dgm1, dgm2 = self.persistence_diagram(), Mboot.persistence_diagram()
             ndg, df = len(dgm1), 0
@@ -288,14 +288,14 @@ class GraphInducedComplex(BaseEstimator, TransformerMixin):
         self.cc_.set_verbose(verbose)
         self.graph_, self.graph_subsampling_, self.graph_subsampling_constant_, self.graph_subsampling_power_ = graph, graph_subsampling, graph_subsampling_constant, graph_subsampling_power
         self.cover_type_, self.filter_, self.resolution_, self.gain_, self.Voronoi_subsampling_ = cover_type, filter, resolution, gain, Voronoi_subsampling
-        self.color_, self.input_ = color, input
+        self.color_, self.input = color, input
 
     def fit(self, X, y=None):
 
         # Read input
-        if self.input_ == "point cloud":
+        if self.input == "point cloud":
             self.cc_.set_point_cloud_from_range(X)
-        elif self.input_ == "distance matrix":
+        elif self.input == "distance matrix":
             self.cc_.set_distances_from_range(X)
 
         # Set color function

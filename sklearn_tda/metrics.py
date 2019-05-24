@@ -51,11 +51,11 @@ def compute_bott_matrix(diags1, diags2, epsilon=1e-3):
 class BottleneckDistance(BaseEstimator, TransformerMixin):
 
     def __init__(self, epsilon=1e-3):
-        self.epsilon_ = epsilon
+        self.epsilon = epsilon
 
     def fit(self, X, y=None):
         self.diagrams_ = X
         return self
 
     def transform(self, X):
-        return compute_bott_matrix(X, self.diagrams_, self.epsilon_)
+        return compute_bott_matrix(X, self.diagrams_, self.epsilon)
