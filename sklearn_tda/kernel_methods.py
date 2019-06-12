@@ -6,87 +6,93 @@ All rights reserved
 import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.metrics import pairwise_distances
+from .metrics import SlicedWassersteinDistance, PersistenceFisherDistance
 
 #############################################
 # Kernel methods ############################
 #############################################
 
-class SlicedWassersteinDistance(BaseEstimator, TransformerMixin):
-
-    def __init__(self, num_directions=10):
-        self.num_directions = num_directions
-        thetas = np.linspace(-np.pi/2, np.pi/2, num=self.num_directions+1)[np.newaxis,:-1]
-        self.lines_ = np.concatenate([np.cos(thetas), np.sin(thetas)], axis=0)
-
-    def fit(self, X, y=None):
-        self.diagrams_ = X
-        self.approx_ = [np.matmul(X[i], self.lines_) for i in range(len(X))]
-        diag_proj = (1./2) * np.ones((2,2))
-        self.approx_diag_ = [np.matmul(np.matmul(X[i], diag_proj), self.lines_) for i in range(len(X))]
-        return self
-
-    def transform(self, X):
-        Xfit = np.zeros((len(X), len(self.approx_)))
-        if self.diagrams_ == X:
-            for i in range(len(self.approx_)):
-                for j in range(i+1, len(self.approx_)):
-                    A = np.sort(np.concatenate([self.approx_[i], self.approx_diag_[j]], axis=0), axis=0)
-                    B = np.sort(np.concatenate([self.approx_[j], self.approx_diag_[i]], axis=0), axis=0)
-                    L1 = np.sum(np.abs(A-B), axis=0)
-                    Xfit[i,j] = np.mean(L1)
-                    Xfit[j,i] = Xfit[i,j]
-        else:
-            diag_proj = (1./2) * np.ones((2,2))
-            approx = [np.matmul(X[i], self.lines_) for i in range(len(X))]
-            approx_diag = [np.matmul(np.matmul(X[i], diag_proj), self.lines_) for i in range(len(X))]
-            for i in range(len(approx)):
-                for j in range(len(self.approx_)):
-                    A = np.sort(np.concatenate([approx[i], self.approx_diag_[j]], axis=0), axis=0)
-                    B = np.sort(np.concatenate([self.approx_[j], approx_diag[i]], axis=0), axis=0)
-                    L1 = np.sum(np.abs(A-B), axis=0)
-                    Xfit[i,j] = np.mean(L1)
-
-        return Xfit
-
 class SlicedWassersteinKernel(BaseEstimator, TransformerMixin):
-
+    """
+    This is a class for computing the sliced Wasserstein kernel matrix from a list of persistence diagrams. The sliced Wasserstein kernel is computed by exponentiating the corresponding sliced Wasserstein distance with a Gaussian kernel. See http://proceedings.mlr.press/v70/carriere17a.html for more details. 
+    """
     def __init__(self, num_directions=10, bandwidth=1.0):
+        """
+        Constructor for the SlicedWassersteinDistance class.
+
+        Attributes:
+            bandwidth (double): bandwidth of the Gaussian kernel applied to the sliced Wasserstein distance (default 1.).
+            num_directions (int): number of lines to sample uniformly from [-pi,pi] in order to approximate and speed up the kernel computation (default 10). If -1, the exact kernel is computed.
+        """
         self.bandwidth = bandwidth
         self.sw_ = SlicedWassersteinDistance(num_directions=num_directions)
 
     def fit(self, X, y=None):
+        """
+        Fit the SlicedWassersteinKernel class on a list of persistence diagrams: an instance of the SlicedWassersteinDistance class is fitted on the diagrams and then stored. 
+
+        Parameters:
+            X (list of n x 2 numpy arrays): input persistence diagrams.
+            y (n x 1 array): persistence diagram labels (unused).
+        """
         self.sw_.fit(X, y)
         return self
 
     def transform(self, X):
+        """
+        Compute all sliced Wasserstein kernel values between the persistence diagrams that were stored after calling the fit() method, and a given list of (possibly different) persistence diagrams.
+
+        Parameters:
+            X (list of n x 2 numpy arrays): input persistence diagrams.
+
+        Returns:
+            Xfit (numpy array of shape (number of diagrams in **diagrams**) x (number of diagrams in X)): matrix of pairwise sliced Wasserstein kernel values.
+        """
         return np.exp(-self.sw_.transform(X)/self.bandwidth)
 
 class PersistenceWeightedGaussianKernel(BaseEstimator, TransformerMixin):
-
-    def __init__(self, bandwidth=1.0, weight=lambda x: 1, kernel_approx=None, use_pss=False):
-        self.bandwidth, self.weight, self.use_pss = bandwidth, weight, use_pss
+    """
+    This is a class for computing the persistence weighted Gaussian kernel matrix from a list of persistence diagrams. The persistence weighted Gaussian kernel is computed by convolving the persistence diagram points with weighted Gaussian kernels. See http://proceedings.mlr.press/v48/kusano16.html for more details. 
+    """
+    def __init__(self, bandwidth=1., weight=lambda x: 1, kernel_approx=None):
+        """
+        Constructor for the PersistenceWeightedGaussianKernel class.
+  
+        Attributes:
+            bandwidth (double): bandwidth of the Gaussian kernel with which persistence diagrams will be convolved (default 1.)
+            weight (function): weight function for the persistence diagram points (default constant function, ie lambda x: 1). This function must be defined on 2D points, ie lists or numpy arrays of the form [p_x,p_y].
+            kernel_approx (class): kernel approximation class used to speed up computation (default None). Common kernel approximations classes can be found in the scikit-learn library (such as RBFSampler for instance).
+        """
+        self.bandwidth, self.weight = bandwidth, weight
         self.kernel_approx = kernel_approx
 
     def fit(self, X, y=None):
+        """
+        Fit the PersistenceWeightedGaussianKernel class on a list of persistence diagrams: persistence diagrams are stored in a numpy array called **diagrams** and the kernel approximation class (if not None) is applied on them. 
+
+        Parameters:
+            X (list of n x 2 numpy arrays): input persistence diagrams.
+            y (n x 1 array): persistence diagram labels (unused).
+        """
         self.diagrams_ = list(X)
-        self.ws_ = []
-        if self.use_pss:
-            for i in range(len(self.diagrams_)):
-                op_D = np.matmul(self.diagrams_[i], np.array([[0.,1.], [1.,0.]]))
-                self.diagrams_[i] = np.concatenate([self.diagrams_[i], op_D], axis=0)
         self.ws_ = [ np.array([self.weight(self.diagrams_[i][j,:]) for j in range(self.diagrams_[i].shape[0])]) for i in range(len(self.diagrams_)) ]
         if self.kernel_approx is not None:
             self.approx_ = np.concatenate([np.sum(np.multiply(self.ws_[i][:,np.newaxis], self.kernel_approx.transform(self.diagrams_[i])), axis=0)[np.newaxis,:] for i in range(len(self.diagrams_))])
         return self
 
     def transform(self, X):
+        """
+        Compute all sliced Wasserstein kernel values between the persistence diagrams that were stored after calling the fit() method, and a given list of (possibly different) persistence diagrams.
+
+        Parameters:
+            X (list of n x 2 numpy arrays): input persistence diagrams.
+
+        Returns:
+            Xfit (numpy array of shape (number of diagrams in **diagrams**) x (number of diagrams in X)): matrix of pairwise persistence weighted Gaussian kernel values.
+        """
         Xp = list(X)
-        if self.use_pss:
-            for i in range(len(Xp)):
-                op_X = np.matmul(Xp[i], np.array([[0.,1.], [1.,0.]]))
-                Xp[i] = np.concatenate([Xp[i], op_X], axis=0)
         Xfit = np.zeros((len(Xp), len(self.diagrams_)))
-        if self.diagrams_ == Xp:
+        if len(self.diagrams_) == len(Xp) and np.all([np.array_equal(self.diagrams_[i], Xp[i]) for i in range(len(Xp))]):
             if self.kernel_approx is not None:
                 Xfit = (1./(np.sqrt(2*np.pi)*self.bandwidth)) * np.matmul(self.approx_, self.approx_.T)
             else:
@@ -111,84 +117,86 @@ class PersistenceWeightedGaussianKernel(BaseEstimator, TransformerMixin):
         return Xfit
 
 class PersistenceScaleSpaceKernel(BaseEstimator, TransformerMixin):
-
-    def __init__(self, bandwidth=1.0, kernel_approx=None):
-        self.pwg_ = PersistenceWeightedGaussianKernel(bandwidth=bandwidth, weight=lambda x: 1 if x[1] >= x[0] else -1, kernel_approx=kernel_approx, use_pss=True)
+    """
+    This is a class for computing the persistence scale space kernel matrix from a list of persistence diagrams. The persistence scale space kernel is computed by adding the symmetric to the diagonal of each point in each persistence diagram, and then convolving the points with a Gaussian kernel. See https://www.cv-foundation.org/openaccess/content_cvpr_2015/papers/Reininghaus_A_Stable_Multi-Scale_2015_CVPR_paper.pdf for more details. 
+    """
+    def __init__(self, bandwidth=1., kernel_approx=None):
+        """
+        Constructor for the PersistenceScaleSpaceKernel class.
+  
+        Attributes:
+            bandwidth (double): bandwidth of the Gaussian kernel with which persistence diagrams will be convolved (default 1.)
+            kernel_approx (class): kernel approximation class used to speed up computation (default None). Common kernel approximations classes can be found in the scikit-learn library (such as RBFSampler for instance).
+        """
+        self.pwg_ = PersistenceWeightedGaussianKernel(bandwidth=bandwidth, weight=lambda x: 1 if x[1] >= x[0] else -1, kernel_approx=kernel_approx)
 
     def fit(self, X, y=None):
-        self.pwg_.fit(X,y)
+        """
+        Fit the PersistenceScaleSpaceKernel class on a list of persistence diagrams: symmetric to the diagonal of all points are computed and an instance of the PersistenceWeightedGaussianKernel class is fitted on the diagrams and then stored. 
+
+        Parameters:
+            X (list of n x 2 numpy arrays): input persistence diagrams.
+            y (n x 1 array): persistence diagram labels (unused).
+        """
+        self.diagrams_ = list(X)
+        for i in range(len(self.diagrams_)):
+            op_D = np.matmul(self.diagrams_[i], np.array([[0.,1.], [1.,0.]]))
+            self.diagrams_[i] = np.concatenate([self.diagrams_[i], op_D], axis=0)
+        self.pwg_.fit(X)
         return self
 
     def transform(self, X):
-        return self.pwg_.transform(X)
+        """
+        Compute all persistence scale space kernel values between the persistence diagrams that were stored after calling the fit() method, and a given list of (possibly different) persistence diagrams.
 
-class PersistenceFisherDistance(BaseEstimator, TransformerMixin):
+        Parameters:
+            X (list of n x 2 numpy arrays): input persistence diagrams.
 
-    def __init__(self, bandwidth=1.0, kernel_approx=None):
-        self.bandwidth, self.kernel_approx = bandwidth, kernel_approx
-
-    def fit(self, X, y=None):
-        self.diagrams_ = X
-        projection = (1./2) * np.ones((2,2))
-        self.diagonal_projections_ = [np.matmul(X[i], projection) for i in range(len(X))]
-        if self.kernel_approx is not None:
-            self.approx_ = [self.kernel_approx.transform(X[i]) for i in range(len(X))]
-            self.approx_diagonal_ = [self.kernel_approx.transform(self.diagonal_projections_[i]) for i in range(len(X))]
-        return self
-
-    def transform(self, X):
-        Xfit = np.zeros((len(X), len(self.diagrams_)))
-        if self.diagrams_ == X:
-            for i in range(len(self.diagrams_)):
-                for j in range(i+1, len(self.diagrams_)):
-                    if self.kernel_approx is not None:
-                        Z = np.concatenate([self.approx_[i], self.approx_diagonal_[i], self.approx_[j], self.approx_diagonal_[j]], axis=0)
-                        U, V = np.sum(np.concatenate([self.approx_[i], self.approx_diagonal_[j]], axis=0), axis=0), np.sum(np.concatenate([self.approx_[j], self.approx_diagonal_[i]], axis=0), axis=0) 
-                        vectori, vectorj = np.matmul(Z, U.T), np.matmul(Z, V.T)
-                        vectori, vectorj = vectori/np.sum(vectori), vectorj/np.sum(vectorj)
-                        Xfit[i,j] = np.arccos(np.dot(np.sqrt(vectori), np.sqrt(vectorj)))
-                        Xfit[j,i] = Xfit[i,j]
-                    else:
-                        Z = np.concatenate([self.diagrams_[i], self.diagonal_projections_[i], self.diagrams_[j], self.diagonal_projections_[j]], axis=0)
-                        U, V = np.concatenate([self.diagrams_[i], self.diagonal_projections_[j]], axis=0), np.concatenate([self.diagrams_[j], self.diagonal_projections_[i]], axis=0) 
-                        vectori = np.sum(np.exp(-np.square(pairwise_distances(Z,U))/(2 * np.square(self.bandwidth)))/(self.bandwidth * np.sqrt(2*np.pi)), axis=1)
-                        vectorj = np.sum(np.exp(-np.square(pairwise_distances(Z,V))/(2 * np.square(self.bandwidth)))/(self.bandwidth * np.sqrt(2*np.pi)), axis=1)
-                        vectori, vectorj = vectori/np.sum(vectori), vectorj/np.sum(vectorj)
-                        Xfit[i,j] = np.arccos(np.dot(np.sqrt(vectori), np.sqrt(vectorj)))
-                        Xfit[j,i] = Xfit[i,j]
-        else:
-            projection = (1./2) * np.ones((2,2))
-            diagonal_projections = [np.matmul(X[i], projection) for i in range(len(X))]
-            if self.kernel_approx is not None:
-                approx = [self.kernel_approx.transform(X[i]) for i in range(len(X))]
-                approx_diagonal = [self.kernel_approx.transform(diagonal_projections[i]) for i in range(len(X))]
-            for i in range(len(X)):
-                for j in range(len(self.diagrams_)):
-                    if self.kernel_approx is not None:
-                        Z = np.concatenate([approx[i], approx_diagonal[i], self.approx_[j], self.approx_diagonal_[j]], axis=0)
-                        U, V = np.sum(np.concatenate([approx[i], self.approx_diagonal_[j]], axis=0), axis=0), np.sum(np.concatenate([self.approx_[j], approx_diagonal[i]], axis=0), axis=0) 
-                        vectori, vectorj = np.matmul(Z, U.T), np.matmul(Z, V.T)
-                        vectori, vectorj = vectori/np.sum(vectori), vectorj/np.sum(vectorj)
-                        Xfit[i,j] = np.arccos(np.dot(np.sqrt(vectori), np.sqrt(vectorj)))
-                    else:
-                        Z = np.concatenate([X[i], diagonal_projections[i], self.diagrams_[j], self.diagonal_projections_[j]], axis=0)
-                        U, V = np.concatenate([X[i], self.diagonal_projections_[j]], axis=0), np.concatenate([self.diagrams_[j], diagonal_projections[i]], axis=0) 
-                        vectori = np.sum(np.exp(-np.square(pairwise_distances(Z,U))/(2 * np.square(self.bandwidth)))/(self.bandwidth * np.sqrt(2*np.pi)), axis=1)
-                        vectorj = np.sum(np.exp(-np.square(pairwise_distances(Z,V))/(2 * np.square(self.bandwidth)))/(self.bandwidth * np.sqrt(2*np.pi)), axis=1)
-                        vectori, vectorj = vectori/np.sum(vectori), vectorj/np.sum(vectorj)
-                        Xfit[i,j] = np.arccos(np.dot(np.sqrt(vectori), np.sqrt(vectorj)))
-        return Xfit
+        Returns:
+            Xfit (numpy array of shape (number of diagrams in **diagrams**) x (number of diagrams in X)): matrix of pairwise persistence scale space kernel values.
+        """
+        Xp = list(X)
+        for i in range(len(Xp)):
+            op_X = np.matmul(Xp[i], np.array([[0.,1.], [1.,0.]]))
+            Xp[i] = np.concatenate([Xp[i], op_X], axis=0)
+        return self.pwg_.transform(Xp)
 
 class PersistenceFisherKernel(BaseEstimator, TransformerMixin):
+    """
+    This is a class for computing the persistence Fisher kernel matrix from a list of persistence diagrams. The persistence Fisher kernel is computed by exponentiating the corresponding persistence Fisher distance with a Gaussian kernel. See papers.nips.cc/paper/8205-persistence-fisher-kernel-a-riemannian-manifold-kernel-for-persistence-diagrams for more details. 
+    """
+    def __init__(self, bandwidth_fisher=1., bandwidth=1., kernel_approx=None):
+        """
+        Constructor for the PersistenceFisherKernel class.
 
-    def __init__(self, bandwidth_fisher=1.0, bandwidth=1.0, kernel_approx=None):
+        Attributes:
+            bandwidth (double): bandwidth of the Gaussian kernel applied to the persistence Fisher distance (default 1.).
+            bandwidth_fisher (double): bandwidth of the Gaussian kernel used to turn persistence diagrams into probability distributions by PersistenceFisherDistance class (default 1.).
+            kernel_approx (class): kernel approximation class used to speed up computation (default None). Common kernel approximations classes can be found in the scikit-learn library (such as RBFSampler for instance).
+        """
         self.bandwidth = bandwidth
         self.pf_ = PersistenceFisherDistance(bandwidth=bandwidth_fisher, kernel_approx=kernel_approx)
 
     def fit(self, X, y=None):
+        """
+        Fit the PersistenceFisherKernel class on a list of persistence diagrams: an instance of the PersistenceFisherDistance class is fitted on the diagrams and then stored. 
+
+        Parameters:
+            X (list of n x 2 numpy arrays): input persistence diagrams.
+            y (n x 1 array): persistence diagram labels (unused).
+        """
         self.pf_.fit(X, y)
         return self
 
     def transform(self, X):
+        """
+        Compute all persistence Fisher kernel values between the persistence diagrams that were stored after calling the fit() method, and a given list of (possibly different) persistence diagrams.
+
+        Parameters:
+            X (list of n x 2 numpy arrays): input persistence diagrams.
+
+        Returns:
+            Xfit (numpy array of shape (number of diagrams in **diagrams**) x (number of diagrams in X)): matrix of pairwise persistence Fisher kernel values.
+        """
         return np.exp(-self.pf_.transform(X)/self.bandwidth)
 

@@ -55,14 +55,14 @@ class DiagramPreprocessor(BaseEstimator, TransformerMixin):
 
         Attributes:
             use (bool): whether to use the class or not (default False).
-            scalers (list of classes): list of scalers to be fit on the persistence diagrams (default []). Each element of the list is a tuple with two elements: the first  one is a list of coordinates, and the second one is a scaler (i.e. a class with fit() and transform() methods) that is going to be applied to these coordinates.
+            scalers (list of classes): list of scalers to be fit on the persistence diagrams (default []). Each element of the list is a tuple with two elements: the first  one is a list of coordinates, and the second one is a scaler (i.e. a class with fit() and transform() methods) that is going to be applied to these coordinates. Common scalers can be found in the scikit-learn library (such as MinMaxScaler for instance).
         """
         self.scalers = scalers
         self.use     = use
 
     def fit(self, X, y=None):
         """
-        Fit the DiagramPreprocessor class on a list of persistence diagrams. Persistence diagrams are concatenated in a big numpy array, and scalers are fit (by calling their fit() method) on their corresponding coordinates in this big array.
+        Fit the DiagramPreprocessor class on a list of persistence diagrams: persistence diagrams are concatenated in a big numpy array, and scalers are fit (by calling their fit() method) on their corresponding coordinates in this big array.
 
         Parameters:
             X (list of n x 2 or n x 1 numpy arrays): input persistence diagrams.

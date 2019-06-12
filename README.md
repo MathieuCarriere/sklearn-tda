@@ -193,44 +193,20 @@ Currently available classes are:
 
 Currently available classes are: 
 
-  * **GraphInducedComplex**: wrapper for the [Graph Induced Complex](http://gudhi.gforge.inria.fr/python/latest/nerve_gic_complex_ref.html) module of Gudhi. **Requires Gudhi!!**
-
-    Parameters:
-
-    | **name** | **description** |
-    | --- | --- |
-    | **graph** = -1 | Radius for the neighborhood graph built on top of the point cloud. If -1, it is computed automatically. |
-    | **graph_subsampling** = 100 | Number of bootstrap iterations. Used only if **graph** = -1. |
-    | **graph_subsampling_power** = 0.001| Power for the approximation method. Used only if **graph** = -1.|
-    | **graph_subsampling_constant** = 10| Constant for the approximation method. Used only if **graph** = -1.|
-    | **cover_type** = "functional"| String specifying the cover. Either "functional" or "Voronoi". |
-    | **filter** = 0| Filter function. Either an integer, in which case the corresponding coordinate is used, or a numpy array specifying the filter values on each node. Not used if **cover_type** = "Voronoi".|
-    | **resolution** = -1| Resolution of intervals. If -1, it is computed automatically. Not used if **cover_type** = "Voronoi".|
-    | **gain** = 0.33| Gain of intervals. Not used if **cover_type** = "Voronoi".|
-    | **Voronoi_subsampling** = 1000| Number of Voronoi cells. Not used if **cover_type** = "functional".|
-    | **mask** = 0| Threshold on the node sizes. |
-    | **color** = 0| Color function. Either an integer, in which case the corresponding coordinate is used, or a numpy array specifying the color values on each node. |
-    | **verbose** = False| Whether to print info or not. |
-    | **input** = "point cloud"| Specifies the input type. Either "point cloud" or "distance matrix". If "distance matrix", some class methods are unavailable.|
-
   * **MapperComplex**: implementation of the [Mapper](https://research.math.osu.edu/tgda/mapperPBG.pdf). **Requires Gudhi!!**
 
     Parameters
 
     | **name** | **description** |
     | --- | --- |
-    | **input** = "point cloud" | String specifying input type. Either "point cloud" or "distance matrix". |
-    | **filters** = np.array([[0]]) | Numpy array specifying the filter values. Each row is a point and each column is a filter dimension. If only one integer is given per column, the corresponding coordinate is used as filter. |
-    | **filter_bnds** = "auto" | Numpy array specifying the lower and upper limits of each filter. If "auto", they are automatically computed.  |
-    | **colors** = np.array([[0]]) | Numpy array specifying the color values. Each row is a point and each column is a color dimension. If only one integer is given per column, the corresponding coordinate is used as color. |
-    | **resolutions** = -1| List of resolutions for each filter dimension. If -1, they are computed automatically. |
-    | **gains** = 0.3| List of gains for each filter dimension. If single number, the same gain is always used. |
+    | **filters**| Numpy array specifying the filter values. Each row is a point and each column is a filter dimension. If only one integer is given per column, the corresponding coordinate is used as filter. |
+    | **filter_bnds**| Numpy array specifying the lower and upper limits of each filter. If "auto", they are automatically computed.  |
+    | **colors**| Numpy array specifying the color values. Each row is a point and each column is a color dimension. If only one integer is given per column, the corresponding coordinate is used as color. |
+    | **resolutions**| List of resolutions for each filter dimension. If -1, they are computed automatically. |
+    | **gains**| List of gains for each filter dimension. If single number, the same gain is always used. |
     | **clustering** = sklearn.cluster.DBSCAN()| Clustering method. |
+    | **input** = "point cloud" | String specifying input type. Either "point cloud" or "distance matrix". |
     | **mask** = 0| Threshold on the node sizes.|
-    | **verbose** = False| Whether to print info or not.|
-    | **beta** = 0| Power for the approximation method. Used only if **resolutions** = -1.|
-    | **C** = 100| Constant for the approximation method. Used only if **resolutions** = -1.|
-    | **N** = 100| Number of bootstrap iterations. Used only if **resolutions** = -1.|
 
 # Installing sklearn_tda
 

@@ -30,5 +30,4 @@ __all__ = [
     "PersistenceFisherDistance", 
 
     "MapperComplex",
-    "GraphInducedComplex"
 ]
