@@ -199,11 +199,11 @@ Currently available classes are:
 
     | **name** | **description** |
     | --- | --- |
-    | **filters**| Numpy array specifying the filter values. Each row is a point and each column is a filter dimension. If only one integer is given per column, the corresponding coordinate is used as filter. |
-    | **filter_bnds**| Numpy array specifying the lower and upper limits of each filter. If "auto", they are automatically computed.  |
-    | **colors**| Numpy array specifying the color values. Each row is a point and each column is a color dimension. If only one integer is given per column, the corresponding coordinate is used as color. |
-    | **resolutions**| List of resolutions for each filter dimension. If -1, they are computed automatically. |
-    | **gains**| List of gains for each filter dimension. If single number, the same gain is always used. |
+    | **filters**| Numpy array specifying the filter values. Each row is a point and each column is a filter dimension.|
+    | **filter_bnds**| Numpy array specifying the lower and upper limits of each filter. If NaN, they are automatically computed.  |
+    | **colors**| Numpy array specifying the color values. Each row is a point and each column is a color dimension. |
+    | **resolutions**| List of resolutions for each filter dimension. If NaN, they are computed automatically. |
+    | **gains**| List of gains for each filter dimension. |
     | **clustering** = sklearn.cluster.DBSCAN()| Clustering method. |
     | **input** = "point cloud" | String specifying input type. Either "point cloud" or "distance matrix". |
     | **mask** = 0| Threshold on the node sizes.|
