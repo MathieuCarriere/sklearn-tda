@@ -30,4 +30,6 @@ __all__ = [
     "PersistenceFisherDistance", 
 
     "MapperComplex",
+    "ToMATo",
+    "DistanceToMeasure"
 ]
