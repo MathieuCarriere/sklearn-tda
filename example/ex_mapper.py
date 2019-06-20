@@ -2,10 +2,9 @@ import numpy as np
 from sklearn.metrics import pairwise_distances
 import os
 import gudhi as gd
-import sys
 from sklearn_tda import *
 
-X = np.loadtxt("human")
+X = np.loadtxt("inputs/human")
 
 print("Mapper computation with point cloud")
 mapper = MapperComplex(inp="point cloud", 

@@ -6,7 +6,7 @@
 
 sklearn_tda is a python package for handling collections of persistence diagrams for machine learning purposes.
 Various preprocessing methods, vectorizations methods and kernels for persistence diagrams are implemented in a [scikit-learn](http://scikit-learn.org/) compatible fashion.
-Clustering methods from TDA (Mapper and Graph Induced Complex) are also implemented.
+Clustering methods from TDA (Mapper and ToMATo) are also implemented.
 
 ### Preprocessing
 
@@ -207,6 +207,27 @@ Currently available classes are:
     | **clustering** = sklearn.cluster.DBSCAN()| Clustering method. |
     | **input** = "point cloud" | String specifying input type. Either "point cloud" or "distance matrix". |
     | **mask** = 0| Threshold on the node sizes.|
+
+  * **ToMATo**: implementation of [ToMATo](https://geometrica.saclay.inria.fr/data/Steve.Oudot/clustering/). **Requires Gudhi!!**
+
+    Parameters
+
+    | **name** | **description** |
+    | --- | --- |
+    | **tau** = None| Merging parameter. If None, n_clusters is used. |
+    | **n_clusters** = None| Number of clusters. If None, it is automatically computed. |
+    | **density_estimator** = DistanceToMeasure()| Density estimator method |
+    | **n_neighbors** = None| Number of neighbors for k-neighbors graph. If None, radius is used.|
+    | **radius** = None| Threshold for delta-neighborhood graph. If None, it is automatically computed. |
+    | **verbose** = False| Print info.|
+
+  * **DistanceToMeasure**: implementation of [distance-to-measure](https://arxiv.org/pdf/1412.7197.pdf) density estimator.
+
+    Parameters
+
+    | **name** | **description** |
+    | --- | --- |
+    | **n_neighbors** = 30| Number of nearest neighbors.|
 
 # Installing sklearn_tda
 

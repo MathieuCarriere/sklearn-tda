@@ -6,13 +6,15 @@ All rights reserved
 import numpy as np
 import itertools
 
-from .metrics                import BottleneckDistance
+#from metrics                 import BottleneckDistance
 from sklearn.base            import BaseEstimator, TransformerMixin
+from sklearn.preprocessing   import LabelEncoder
 from sklearn.cluster         import DBSCAN, AgglomerativeClustering
 from sklearn.metrics         import pairwise_distances
-from sklearn.neighbors       import radius_neighbors_graph, kneighbors_graph
 from scipy.spatial.distance  import directed_hausdorff
 from scipy.sparse            import csgraph
+from sklearn.neighbors       import KernelDensity, kneighbors_graph, radius_neighbors_graph, NearestNeighbors
+import matplotlib.pyplot as plt
 
 try:
     import gudhi as gd
@@ -25,6 +27,31 @@ except ImportError:
 #############################################
 # Clustering ################################
 #############################################
+
+def estimate_scale(X, N=100, inp="point cloud", beta=0., C=10.):
+    """
+    Compute estimated scale of a point cloud or a distance matrix.
+
+    Parameters:
+        X (numpy array of shape (num_points) x (num_coordinates) if point cloud and (num_points) x (num_points) if distance matrix): input point cloud or distance matrix.
+        N (int): subsampling iterations (default 100). See http://www.jmlr.org/papers/volume19/17-291/17-291.pdf for details.
+        inp (string): either "point cloud" or "distance matrix". Type of input data (default "point cloud").
+        beta (double): exponent parameter (default 0.). See http://www.jmlr.org/papers/volume19/17-291/17-291.pdf for details.
+        C (double): constant parameter (default 10.). See http://www.jmlr.org/papers/volume19/17-291/17-291.pdf for details.
+
+    Returns:
+        delta (double): estimated scale that can be used with eg agglomerative clustering.
+    """
+    num_pts = X.shape[0]
+    delta, m = 0., int(  num_pts / np.exp((1+beta) * np.log(np.log(num_pts)/np.log(C)))  )
+    for _ in range(N):
+        subpop = np.random.choice(num_pts, size=m, replace=False)
+        if inp == "point cloud":
+            d, _, _ = directed_hausdorff(X, X[subpop,:])
+        if inp == "distance matrix":
+            d = np.max(np.min(X[:,subpop], axis=1), axis=0)
+        delta += d/N
+    return delta
 
 class MapperComplex(BaseEstimator, TransformerMixin):
     """
@@ -65,14 +92,7 @@ class MapperComplex(BaseEstimator, TransformerMixin):
             resolutions (numpy array of shape (num_filters): optimal resolutions associated to each filter.
         """
         num_pts, num_filt, delta = X.shape[0], self.filters.shape[1], 0
-        m = int(  num_pts / np.exp((1+beta) * np.log(np.log(num_pts)/np.log(C)))  )
-        for _ in range(N):
-            subpop = np.random.choice(num_pts, size=m, replace=False)
-            if self.input == "point cloud":
-                d, _, _ = directed_hausdorff(X, X[subpop,:])
-            if self.input == "distance matrix":
-                d = np.max(np.min(X[:,subpop], axis=1), axis=0)
-            delta += d/N
+        delta = estimate_scale(X=X, N=N, inp=self.input, C=C, beta=beta)
 
         pairwise = pairwise_distances(X, metric="euclidean") if self.input == "point cloud" else X
         pairs = np.argwhere(pairwise <= delta)
@@ -102,7 +122,6 @@ class MapperComplex(BaseEstimator, TransformerMixin):
         # If some resolutions are not specified, automatically compute them
         if np.any(np.isnan(self.resolutions)):
             delta, resolutions = self.get_optimal_parameters_for_agglomerative_clustering(X=X, beta=0., C=10, N=100)
-            #self.clustering = NNClustering(radius=delta, inp=self.input)  
             if self.input == "point cloud":
                 self.clustering = AgglomerativeClustering(n_clusters=None, linkage="single", distance_threshold=delta, affinity="euclidean")  
             else:
@@ -262,8 +281,194 @@ class MapperComplex(BaseEstimator, TransformerMixin):
                 npts, npts_boot = len(dgm[i]), len(dgm_boot[i])
                 D1 = np.array([[dgm[i][pt][1][0], dgm[i][pt][1][1]] for pt in range(npts) if dgm[i][pt][0] <= 1]) 
                 D2 = np.array([[dgm_boot[i][pt][1][0], dgm_boot[i][pt][1][1]] for pt in range(npts_boot) if dgm_boot[i][pt][0] <= 1])
-                bottle = BottleneckDistance().fit([D1])
-                df = max(df, float(np.squeeze(bottle.transform([D2]))))
+                bottle = gd.bottleneck_distance(D1, D2)
+                df = max(df, bottle)
             distribution.append(df)
 
         return np.sort(distribution)
+
+
+
+
+class DistanceToMeasure(BaseEstimator, TransformerMixin):
+    """
+    This is a class for computing the distance-to-measure density estimator. 
+    """
+    def __init__(self, n_neighbors=30, inp="point cloud"):
+        """
+        Constructor for the DistanceToMeasure class.
+
+        Attributes:
+            num_neighbors (int): number of nearest neighbors used to estimate density.
+            inp (string): either "point cloud" or "distance matrix". Type of input data (default "point cloud").
+        """
+        self.input = inp
+        self.neighb = NearestNeighbors(n_neighbors=n_neighbors, metric="euclidean") if self.input == "point cloud" else NearestNeighbors(n_neighbors=n_neighbors, metric="precomputed")
+
+    def fit(self, X, y=None):
+        """
+        Fit the DistanceToMeasure class on a point cloud or a distance matrix: compute the nearest neighbors of each point.
+
+        Parameters:
+            X (numpy array of shape (num_points) x (num_coordinates) if point cloud and (num_points) x (num_points) if distance matrix): input point cloud or distance matrix.
+            y (n x 1 array): point labels (unused).
+        """
+        self.neighb.fit(X)
+
+    def score_samples(self, X, y=None):
+        """
+        Compute estimated density values of a new point cloud or distance matrix.
+     
+        Parameters:
+            X (numpy array of shape (num_points) x (num_coordinates) if point cloud and (num_points) x (num_points_indexed) if distance matrix): input point cloud or distance matrix.
+            y (n x 1 array): point labels (unused).
+        """
+        dist, idxs = self.neighb.kneighbors(X) 
+        return 1/np.sqrt(np.mean(np.square(dist), axis=1))
+        
+    
+class ToMATo(BaseEstimator, TransformerMixin):
+    """
+    This is a class for computing ToMATo clustering.
+    """
+    def __init__(self, n_clusters=None, tau=None, density_estimator=DistanceToMeasure(), n_neighbors=None, radius=None, verbose=False):
+        """
+        Constructor for the ToMATo class.
+
+        Attributes:
+            tau (double): merging parameter (default None). If None, n_clusters is used instead.
+            n_clusters (int): number of clusters (default None). If None, it is estimated on data.
+            density_estimator (class): density estimator class (default DistanceToMeasure()). Common density estimator classes can be found in the scikit-learn library (such as KernelDensity for instance).
+            n_neighbors (int): number of neighbors used to build nearest neighbor graph (default None). If None, delta-neighborhood graph is used.
+            radius (double): threshold parameter of delta-neighborhood graph (default None). If None, it is estimated on data.
+            verbose (bool): whether to print info during computation (default False).
+
+            labels_ (numpy array of shape (num_points)): clustering labels computed after calling fit() method. 
+        """
+        self.tau, self.density_estimator, self.n_clusters = tau, density_estimator, n_clusters
+        self.n_neighbors, self.radius = n_neighbors, radius
+        self.verbose = verbose
+
+    def find(self, i, parents):
+        """
+        Find function for Union-Find data structure.
+
+        Parameters:
+            i (int): ID of point for which parent is required.
+            parents (numpy array of shape (num_points)): array storing parents of each point.
+        """
+        if parents[i] == i:
+            return i
+        else:
+            return self.find(parents[i], parents)
+
+    def union(self, i, j, parents, f):
+        """
+        Union function for Union-Find data structure. Peak of smaller function value is attached to peak of larger function value.
+
+        Parameters:
+            i (int): ID of first point to be merged.
+            j (int): ID of second point to be merged.
+            parents (numpy array of shape (num_points)): array storing parents of each point.
+            f (numpy array of shape (num_points)): array storing function values of each point.
+        """
+        if f[i] > f[j]:
+            parents[j] = i
+        else:
+            parents[i] = j
+
+    def fit(self, X, y=None):
+        """
+        Fit the ToMATo class on a point cloud: compute the ToMATo clusters and store the corresponding labels in a numpy array called labels_
+
+        Parameters:
+            X (numpy array of shape (num_points) x (num_coordinates)): input point cloud.
+            y (n x 1 array): point labels (unused).
+        """
+        num_pts = X.shape[0]
+
+        if self.verbose:
+            print("Computing density estimator")
+        self.density_estimator.fit(X)
+        self.density_values = self.density_estimator.score_samples(X)
+        if self.verbose:
+            plt.scatter(X[:,0], X[:,1], s=5., c=self.density_values)
+            plt.show()
+
+        if self.verbose:
+            print("Computing underlying graph")
+        if self.n_neighbors is not None: 
+            A = kneighbors_graph(X, self.n_neighbors).toarray()
+            A = np.minimum(A + A.T, np.ones(A.shape))
+        elif self.radius is not None:
+            A = radius_neighbors_graph(X, self.radius).toarray()
+        else:
+            radius = estimate_scale(X, N=100, inp="point cloud", C=10., beta=0.)
+            if self.verbose:
+                print("radius = " + str(radius))
+            A = radius_neighbors_graph(X, radius).toarray()
+
+        if self.verbose:
+            print("Sorting points by density")
+        sorted_idxs = np.flip(np.argsort(self.density_values))
+        inv_sorted_idxs = np.arange(num_pts)
+        for i in range(num_pts):
+            inv_sorted_idxs[sorted_idxs[i]] = i
+
+        if self.verbose:
+            print("Computing tau")
+        if self.tau is not None:
+            tau = self.tau
+        else:
+            st = gd.SimplexTree()
+            for i in range(num_pts):
+                st.insert([i], filtration=-self.density_values[i])
+            for i in range(num_pts):
+                for j in range(i+1,num_pts):
+                    if A[i,j] == 1.:
+                        st.insert([i,j], filtration=max(-self.density_values[i],-self.density_values[j]))
+            d = st.persistence()
+            plot = gd.plot_persistence_diagram(d)
+            plot.show()
+            dgm = st.persistence_intervals_in_dimension(0)
+            persistences = np.sort([abs(y-x) for (x,y) in dgm])
+            if self.n_clusters is not None:
+                tau = (persistences[-self.n_clusters-1] + persistences[-self.n_clusters]) / 2
+            else:
+                n_clusters = np.argmax(np.flip(persistences[1:-1] - persistences[:-2])) + 2
+                tau = (persistences[-n_clusters-1] + persistences[-n_clusters]) / 2
+        if self.verbose:
+            print("tau = " + str(tau))
+
+        if self.verbose:
+            print("Applying UF sequentially")
+        diag, parents = {}, -np.ones(num_pts, dtype=np.int32)
+        for i in range(num_pts):
+
+            current_pt = sorted_idxs[i]
+            neighbors = np.squeeze(np.argwhere(A[current_pt,:] == 1.))
+            higher_neighbors = [n for n in neighbors if inv_sorted_idxs[n] <= i] if len(neighbors.shape) > 0 else []
+
+            if higher_neighbors == []:
+
+                parents[current_pt] = current_pt
+                diag[current_pt] = -np.inf
+
+            else:
+
+                g = higher_neighbors[np.argmax(self.density_values[np.array(higher_neighbors)])]
+                pg = self.find(g, parents)
+                parents[current_pt] = pg
+
+                for neighbor in higher_neighbors:
+
+                    pn = self.find(neighbor, parents)
+                    val = min(self.density_values[pg], self.density_values[pn])
+
+                    if pg != pn and val < self.density_values[current_pt] + tau and val > tau:
+                        self.union(pg, pn, parents, self.density_values)
+                        pp = pg if self.density_values[pg] < self.density_values[pn] else pn
+                        diag[pp] = current_pt
+
+        self.labels_ = np.array([self.find(n, parents) for n in range(num_pts)])
+        self.labels_ = LabelEncoder().fit_transform(np.where(self.density_values[self.labels_] > tau, self.labels_, -np.ones(self.labels_.shape)))
