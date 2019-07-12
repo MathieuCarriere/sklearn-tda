@@ -1,4 +1,4 @@
-# sklearn_tda: a scikit-learn compatible python package for Machine Learning and TDA
+# sklearn-tda: a scikit-learn compatible python package for Machine Learning and TDA
 
 **Author**: Mathieu Carrière.
 
