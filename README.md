@@ -193,7 +193,7 @@ Currently available classes are:
 
 Currently available classes are: 
 
-  * **MapperComplex**: implementation of the [Mapper](https://research.math.osu.edu/tgda/mapperPBG.pdf). **Requires Gudhi!!**
+  * **MapperComplex**: implementation of the [Mapper](https://research.math.osu.edu/tgda/mapperPBG.pdf). **Requires Gudhi!!**. Note that further statistical analysis can be performed with [statmapper](https://github.com/MathieuCarriere/statmapper).
 
     Parameters
 
