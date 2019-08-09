@@ -134,36 +134,68 @@ class MapperComplex(BaseEstimator, TransformerMixin):
         # Initialize attributes
         self.mapper_, self.node_info_ = gd.SimplexTree(), {}
 
-        # Compute which points fall in which patch or patch intersections
-        interval_inds, intersec_inds = np.empty(self.filters.shape), np.empty(self.filters.shape)
-        for i in range(num_filters):
-            f, r, g = self.filters[:,i], self.resolutions[i], self.gains[i]
-            min_f, max_f = self.filter_bnds[i,0], np.nextafter(self.filter_bnds[i,1], np.inf)
-            interval_endpoints, l = np.linspace(min_f, max_f, num=r+1, retstep=True)
-            intersec_endpoints = []
-            for j in range(1, len(interval_endpoints)-1):
-                intersec_endpoints.append(interval_endpoints[j] - g*l / (2 - 2*g))
-                intersec_endpoints.append(interval_endpoints[j] + g*l / (2 - 2*g))
-            interval_inds[:,i] = np.digitize(f, interval_endpoints)
-            intersec_inds[:,i] = 0.5 * (np.digitize(f, intersec_endpoints) + 1)
+        if np.all(self.gains < .5):
+            
+            # Compute which points fall in which patch or patch intersections
+            interval_inds, intersec_inds = np.empty(self.filters.shape), np.empty(self.filters.shape)
+            for i in range(num_filters):
+                f, r, g = self.filters[:,i], self.resolutions[i], self.gains[i]
+                min_f, max_f = self.filter_bnds[i,0], np.nextafter(self.filter_bnds[i,1], np.inf)
+                interval_endpoints, l = np.linspace(min_f, max_f, num=r+1, retstep=True)
+                intersec_endpoints = []
+                for j in range(1, len(interval_endpoints)-1):
+                    intersec_endpoints.append(interval_endpoints[j] - g*l / (2 - 2*g))
+                    intersec_endpoints.append(interval_endpoints[j] + g*l / (2 - 2*g))
+                interval_inds[:,i] = np.digitize(f, interval_endpoints)
+                intersec_inds[:,i] = 0.5 * (np.digitize(f, intersec_endpoints) + 1)
 
-        # Build the binned_data map that takes a patch or a patch intersection and outputs the indices of the points contained in it
-        binned_data = {}
-        for i in range(num_pts):
-            list_preimage = []
-            for j in range(num_filters):
-                a, b = interval_inds[i,j], intersec_inds[i,j]
-                list_preimage.append([a])
-                if b == a:
-                    list_preimage[j].append(a+1)
-                if b == a-1:
-                    list_preimage[j].append(a-1)
-            list_preimage = list(itertools.product(*list_preimage))
-            for pre_idx in list_preimage:
-                try:
-                    binned_data[pre_idx].append(i)
-                except KeyError:
-                    binned_data[pre_idx] = [i]
+            # Build the binned_data map that takes a patch or a patch intersection and outputs the indices of the points contained in it
+            binned_data = {}
+            for i in range(num_pts):
+                list_preimage = []
+                for j in range(num_filters):
+                    a, b = interval_inds[i,j], intersec_inds[i,j]
+                    list_preimage.append([a])
+                    if b == a:
+                        list_preimage[j].append(a+1)
+                    if b == a-1:
+                        list_preimage[j].append(a-1)
+                list_preimage = list(itertools.product(*list_preimage))
+                for pre_idx in list_preimage:
+                    try:
+                        binned_data[pre_idx].append(i)
+                    except KeyError:
+                        binned_data[pre_idx] = [i]
+
+        else:
+
+            # Compute interval endpoints for each filter
+            l_int, r_int = [], []
+            for i in range(num_filters):
+                L, R = [], []
+                f, r, g = self.filters[:,i], self.resolutions[i], self.gains[i]
+                min_f, max_f = self.filter_bnds[i,0], np.nextafter(self.filter_bnds[i,1], np.inf)
+                interval_endpoints, l = np.linspace(min_f, max_f, num=r+1, retstep=True)
+                for j in range(len(interval_endpoints)-1):
+                    L.append(interval_endpoints[j]   - g*l / (2 - 2*g))
+                    R.append(interval_endpoints[j+1] + g*l / (2 - 2*g))
+                l_int.append(L)
+                r_int.append(R)
+
+            # Build the binned_data map that takes a patch or a patch intersection and outputs the indices of the points contained in it
+            binned_data = {}
+            for i in range(num_pts):
+                list_preimage = []
+                for j in range(num_filters):
+                    fval = self.filters[i,j]
+                    start, end = int(min(np.argwhere(np.array(r_int[j]) >= fval))), int(max(np.argwhere(np.array(l_int[j]) <= fval)))
+                    list_preimage.append(list(range(start, end+1)))
+                list_preimage = list(itertools.product(*list_preimage))
+                for pre_idx in list_preimage:
+                    try:
+                        binned_data[pre_idx].append(i)
+                    except KeyError:
+                        binned_data[pre_idx] = [i]
 
         # Initialize the cover map, that takes a point and outputs the clusters to which it belongs
         cover, clus_base = [[] for _ in range(num_pts)], 0
