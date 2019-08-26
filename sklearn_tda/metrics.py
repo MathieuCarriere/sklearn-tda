@@ -214,7 +214,10 @@ class PersistenceFisherDistance(BaseEstimator, TransformerMixin):
                         Z = np.concatenate([approx[i], approx_diagonal[i], self.approx_[j], self.approx_diagonal_[j]], axis=0)
                         U, V = np.sum(np.concatenate([approx[i], self.approx_diagonal_[j]], axis=0), axis=0), np.sum(np.concatenate([self.approx_[j], approx_diagonal[i]], axis=0), axis=0) 
                         vectori, vectorj = np.matmul(Z, U.T), np.matmul(Z, V.T)
-                        vectori, vectorj = vectori/np.sum(vectori), vectorj/np.sum(vectorj)
+                        if np.sum(vectori) != 0:
+                            vectori = vectori/np.sum(vectori)
+                        if np.sum(vectorj) != 0:
+                            vectorj = vectorj/np.sum(vectorj)
                         Xfit[i,j] = np.arccos(np.dot(np.sqrt(vectori), np.sqrt(vectorj)))
                     else:
                         Z = np.concatenate([X[i], diagonal_projections[i], self.diagrams_[j], self.diagonal_projections_[j]], axis=0)
