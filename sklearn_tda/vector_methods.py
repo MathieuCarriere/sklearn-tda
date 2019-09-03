@@ -69,7 +69,8 @@ class PersistenceImage(BaseEstimator, TransformerMixin):
             image = np.tensordot(w, np.exp((-np.square(Xs)-np.square(Ys))/(2*np.square(self.bandwidth)))/(self.bandwidth*np.sqrt(2*np.pi)), 1)
 
             Xfit.append(image.flatten()[np.newaxis,:])
-            Xfit = np.concatenate(Xfit,0)
+
+        Xfit = np.concatenate(Xfit,0)
 
         return Xfit
 
@@ -150,7 +151,8 @@ class Landscape(BaseEstimator, TransformerMixin):
                     ls[k,j] = events[j][k]
 
             Xfit.append(np.sqrt(2)*np.reshape(ls,[1,-1]))
-            Xfit = np.concatenate(Xfit,0)
+
+        Xfit = np.concatenate(Xfit,0)
 
         return Xfit
 
@@ -227,7 +229,8 @@ class Silhouette(BaseEstimator, TransformerMixin):
                         silhouette_value -= step_x
 
             Xfit.append(np.reshape(np.sqrt(2) * sh, [1,-1]))
-            Xfit = np.concatenate(Xfit, 0)
+
+        Xfit = np.concatenate(Xfit, 0)
 
         return Xfit 
 
@@ -286,7 +289,8 @@ class BettiCurve(BaseEstimator, TransformerMixin):
                     bc[k] += 1
 
             Xfit.append(np.reshape(bc,[1,-1]))
-            Xfit = np.concatenate(Xfit, 0)
+
+        Xfit = np.concatenate(Xfit, 0)
 
         return Xfit
 
