@@ -5,10 +5,10 @@ All rights reserved
 
 import numpy as np
 from sklearn.base          import BaseEstimator, TransformerMixin
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler, MaxAbsScaler
 from sklearn.neighbors     import DistanceMetric
 
-from .preprocessing import DiagramPreprocessor
+from .preprocessing import DiagramPreprocessor, BirthPersistenceTransform
 
 #############################################
 # Finite Vectorization methods ##############
@@ -40,7 +40,8 @@ class PersistenceImage(BaseEstimator, TransformerMixin):
             y (n x 1 array): persistence diagram labels (unused).
         """
         if np.isnan(np.array(self.im_range)).any():
-            pre = DiagramPreprocessor(use=True, scalers=[([0,1], MinMaxScaler())]).fit(X,y)
+            new_X = DiagramPreprocessor(use=True, scalers=[([0,1], BirthPersistenceTransform())]).fit_transform(X)
+            pre = DiagramPreprocessor(use=True, scalers=[([0,1], MinMaxScaler())]).fit(new_X,y)
             [mx,my],[Mx,My] = pre.scalers[0][1].data_min_, pre.scalers[0][1].data_max_
             self.im_range = np.where(np.isnan(np.array(self.im_range)), np.array([mx, Mx, my, My]), np.array(self.im_range))
         return self
@@ -56,9 +57,11 @@ class PersistenceImage(BaseEstimator, TransformerMixin):
             Xfit (numpy array with shape (number of diagrams) x (number of pixels = **resolution[0]** x **resolution[1]**)): output persistence images.
         """
         num_diag, Xfit = len(X), []
+        new_X = DiagramPreprocessor(use=True, scalers=[([0,1], BirthPersistenceTransform())]).fit_transform(X)
+
         for i in range(num_diag):
 
-            diagram, num_pts_in_diag = X[i], X[i].shape[0]
+            diagram, num_pts_in_diag = new_X[i], X[i].shape[0]
 
             w = np.ones(num_pts_in_diag)
             for j in range(num_pts_in_diag):
@@ -289,6 +292,50 @@ class BettiCurve(BaseEstimator, TransformerMixin):
                     bc[k] += 1
 
             Xfit.append(np.reshape(bc,[1,-1]))
+
+        Xfit = np.concatenate(Xfit, 0)
+
+        return Xfit
+
+class Entropy(BaseEstimator, TransformerMixin):
+    """
+    This is a class for computing persistence entropy.
+    """
+    def __init__(self):
+        """
+        Constructor for the Entropy class.
+        """
+        return None
+
+    def fit(self, X, y=None):
+        """
+        Fit the Entropy class on a list of persistence diagrams.
+
+        Parameters:
+            X (list of n x 2 numpy arrays): input persistence diagrams.
+            y (n x 1 array): persistence diagram labels (unused).
+        """
+        return self
+
+    def transform(self, X):
+        """
+        Compute the entropy for each persistence diagram individually and concatenate the results.
+
+        Parameters:
+            X (list of n x 2 numpy arrays): input persistence diagrams.
+    
+        Returns:
+            Xfit (numpy array with shape (number of diagrams) x (1)): output entropy.
+        """
+        num_diag, Xfit = len(X), []
+        new_X = DiagramPreprocessor(use=True, scalers=[([0,1], BirthPersistenceTransform())]).fit_transform(X)        
+
+        for i in range(num_diag):
+
+            diagram, num_pts_in_diag = new_X[i], X[i].shape[0]
+            new_diagram = DiagramPreprocessor(use=True, scalers=[([1], MaxAbsScaler())]).fit_transform([diagram])[0]
+            ent = - np.sum( np.multiply(new_diagram[:,1], np.log(new_diagram[:,1])) )
+            Xfit.append(np.array([[ent]]))
 
         Xfit = np.concatenate(Xfit, 0)
 

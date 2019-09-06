@@ -13,6 +13,7 @@ __all__ = [
     "Silhouette",
     "TopologicalVector",
     "ComplexPolynomial",
+    "Entropy",
 
     "DiagramSelector",
     "ProminentPoints",
