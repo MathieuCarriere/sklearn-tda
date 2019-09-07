@@ -57,8 +57,8 @@ class DiagramPreprocessor(BaseEstimator, TransformerMixin):
             use (bool): whether to use the class or not (default False).
             scalers (list of classes): list of scalers to be fit on the persistence diagrams (default []). Each element of the list is a tuple with two elements: the first one is a list of coordinates, and the second one is a scaler (i.e. a class with fit() and transform() methods) that is going to be applied to these coordinates. Common scalers can be found in the scikit-learn library (such as MinMaxScaler for instance).
         """
-        self.scalers = scalers
-        self.use     = use
+        self.scalers  = scalers
+        self.use      = use
 
     def fit(self, X, y=None):
         """
@@ -74,7 +74,7 @@ class DiagramPreprocessor(BaseEstimator, TransformerMixin):
             else:
                 P = np.concatenate(X,0)
             for (indices, scaler) in self.scalers:
-                scaler.fit(P[:,indices])
+                scaler.fit(np.reshape(P[:,indices], [-1]))
         return self
 
     def transform(self, X):
