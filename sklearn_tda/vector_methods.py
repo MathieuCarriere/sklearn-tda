@@ -299,13 +299,19 @@ class BettiCurve(BaseEstimator, TransformerMixin):
 
 class Entropy(BaseEstimator, TransformerMixin):
     """
-    This is a class for computing persistence entropy.
+    This is a class for computing persistence entropy. Persistence entropy is a statistic for persistence diagrams inspired from Shannon entropy. This statistic can also be used to compute a feature vector, called the entropy summary function. See https://arxiv.org/pdf/1803.08304.pdf for more details.
     """
-    def __init__(self):
+    def __init__(self, mode="scalar", normalized=True, resolution=100, ent_range=[np.nan, np.nan]):
         """
         Constructor for the Entropy class.
+
+        Attributes:
+            mode (string): what entropy to compute: either "scalar" for computing the entropy statistics, or "vector" for computing the entropy summary functions (default "scalar").
+            normalized (bool): whether to normalize the entropy summary function (default True). Used only if **mode** = "vector". 
+            resolution (int): number of sample for the entropy summary function (default 100). Used only if **mode** = "vector".
+            ent_range ([double, double]): minimum and maximum of the entropy summary function domain, of the form [x_min, x_max] (default [numpy.nan, numpy.nan]). It is the interval on which samples will be drawn uniformly. If one of the values is numpy.nan, it can be computed from the persistence diagrams with the fit() method. Used only if **mode** = "vector".
         """
-        return None
+        self.mode, self.normalized, self.resolution, self.ent_range = mode, normalized, resolution, ent_range
 
     def fit(self, X, y=None):
         """
@@ -315,6 +321,10 @@ class Entropy(BaseEstimator, TransformerMixin):
             X (list of n x 2 numpy arrays): input persistence diagrams.
             y (n x 1 array): persistence diagram labels (unused).
         """
+        if np.isnan(np.array(self.ent_range)).any():
+            pre = DiagramPreprocessor(use=True, scalers=[([0,1], MinMaxScaler())]).fit(X,y)
+            [mx,my],[Mx,My] = pre.scalers[0][1].data_min_, pre.scalers[0][1].data_max_
+            self.ent_range = np.where(np.isnan(np.array(self.ent_range)), np.array([mx, My]), np.array(self.ent_range))
         return self
 
     def transform(self, X):
@@ -325,17 +335,33 @@ class Entropy(BaseEstimator, TransformerMixin):
             X (list of n x 2 numpy arrays): input persistence diagrams.
     
         Returns:
-            Xfit (numpy array with shape (number of diagrams) x (1)): output entropy.
+            Xfit (numpy array with shape (number of diagrams) x (1 if **mode** = "scalar" else **resolution**)): output entropy.
         """
         num_diag, Xfit = len(X), []
+        x_values = np.linspace(self.ent_range[0], self.ent_range[1], self.resolution)
+        step_x = x_values[1] - x_values[0]
         new_X = DiagramPreprocessor(use=True, scalers=[([0,1], BirthPersistenceTransform())]).fit_transform(X)        
 
         for i in range(num_diag):
 
-            diagram, num_pts_in_diag = new_X[i], X[i].shape[0]
+            orig_diagram, diagram, num_pts_in_diag = X[i], new_X[i], X[i].shape[0]
             new_diagram = DiagramPreprocessor(use=True, scalers=[([1], MaxAbsScaler())]).fit_transform([diagram])[0]
-            ent = - np.sum( np.multiply(new_diagram[:,1], np.log(new_diagram[:,1])) )
-            Xfit.append(np.array([[ent]]))
+
+            if self.mode == "scalar":
+                ent = - np.sum( np.multiply(new_diagram[:,1], np.log(new_diagram[:,1])) )
+                Xfit.append(np.array([[ent]]))
+
+            else:
+                ent = np.zeros(self.resolution)
+                for j in range(num_pts_in_diag):
+                    [px,py] = orig_diagram[j,:]
+                    min_idx = np.minimum(np.maximum(np.ceil((px - self.ent_range[0]) / step_x).astype(int), 0), self.resolution)
+                    max_idx = np.minimum(np.maximum(np.ceil((py - self.ent_range[0]) / step_x).astype(int), 0), self.resolution)
+                    for k in range(min_idx, max_idx):
+                        ent[k] += (-1) * new_diagram[j,1] * np.log(new_diagram[j,1])
+                    if self.normalized:
+                        ent = ent / np.linalg.norm(ent, ord=1)
+                    Xfit.append(np.reshape(ent,[1,-1]))
 
         Xfit = np.concatenate(Xfit, 0)
 

@@ -69,7 +69,7 @@ Currently available classes are:
     | --- | --- |
     |**num_landscapes** = 5| Number of landscapes.|
     |**resolution** = 100| Number of sample points of each landscape.|
-    |**ls_range** = [np.nan, np.nan]| Range of each landscape. If np.nan, it is set to min and max of x-axis in the diagrams.|
+    |**ls_range** = [np.nan, np.nan]| Range of each landscape. If np.nan, it is set to min and max of the diagram coordinates.|
 
   * **PersistenceImage**: implementation of [persistence images](http://jmlr.org/papers/v18/16-337.html).
 
@@ -80,7 +80,7 @@ Currently available classes are:
     |**bandwidth** = 1.0 | Bandwidth of Gaussian kernel on the plane.|
     |**weight** = lambda x: 1| Weight on diagram points. It is a python function.|
     |**resolution** = [20,20]| Resolution of image.|
-    |**im_range** = [np.nan, np.nan, np.nan, np.nan]| Range of coordinates. If np.nan, it is set to min and max of x- and y-axis in the diagrams.|
+    |**im_range** = [np.nan, np.nan, np.nan, np.nan]| Range of coordinates. If np.nan, it is set to min and max of the diagram coordinates.|
 
   * **BettiCurve**: implementation of [Betti curves](https://www.researchgate.net/publication/316604237_Time_Series_Classification_via_Topological_Data_Analysis).
 
@@ -89,7 +89,7 @@ Currently available classes are:
     | **name** | **description** |
     | --- | --- |
     |**resolution** = 100| Number of sample points of Betti curve.|
-    |**bc_range** = [np.nan, np.nan]| Range of Betti curve. If np.nan, it is set to min and max of x-axis in the diagrams.|
+    |**bc_range** = [np.nan, np.nan]| Range of Betti curve. If np.nan, it is set to min and max of the diagram coordinates.|
 
   * **Silhouette**: implementation of [silhouettes](http://jocg.org/index.php/jocg/article/view/203).
 
@@ -99,7 +99,7 @@ Currently available classes are:
     | --- | --- |
     |**weight** = lambda x: 1| Weight on diagram points. It is a python function.|
     |**resolution** = 100| Number of sample points of silhouette.|
-    |**range** = [np.nan, np.nan]| Range of silhouette. If np.nan, it is set to min and max of x-axis in the diagrams.|
+    |**range** = [np.nan, np.nan]| Range of silhouette. If np.nan, it is set to min and max of the diagram coordinates.|
 
   * **TopologicalVector**: implementation of [distance vectors](https://diglib.eg.org/handle/10.1111/cgf12692).
 
@@ -117,6 +117,17 @@ Currently available classes are:
     | --- | --- |
     |**F** = "R"| Complex transformation to apply on the diagram points. Either "R", "S" or "T". |
     |**threshold** = 10| Number of coefficients to keep. |
+
+  * **Entropy**: implementation of [persistence entropy](https://arxiv.org/pdf/1803.08304.pdf).
+
+    Parameters:
+
+    | **name** | **description** |
+    | --- | --- |
+    |**mode** = "scalar"| Whether to compute the entropy statistic or the entropy summary function. Either "scalar" or "vector". |
+    |**normalized** = True| Whether to normalize the entropy summary function.|
+    |**resolution** = 100| Number of sample points of entropy summary function.|
+    |**bc_range** = [np.nan, np.nan]| Range of entropy summary function. If np.nan, it is set to min and max of the diagram coordinates.|
 
 ### Kernels
 

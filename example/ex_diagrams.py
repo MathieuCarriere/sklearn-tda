@@ -43,9 +43,14 @@ pi = PI.fit_transform(diags)
 plt.imshow(np.flip(np.reshape(pi[0], [100,100]), 0))
 plt.show()
 
-ET = Entropy()
+ET = Entropy(mode="scalar")
 et = ET.fit_transform(diags)
-print("Entropy is " + str(et[0,:]))
+print("Entropy statistic is " + str(et[0,:]))
+
+ET = Entropy(mode="vector", normalized=False)
+et = ET.fit_transform(diags)
+plt.plot(et[0])
+plt.show()
 
 plt.scatter(D[:,0],D[:,1])
 D = np.array([[1.,5.],[3.,6.],[2.,7.]])
