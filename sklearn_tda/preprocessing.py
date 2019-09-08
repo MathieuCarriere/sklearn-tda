@@ -74,7 +74,7 @@ class DiagramPreprocessor(BaseEstimator, TransformerMixin):
             else:
                 P = np.concatenate(X,0)
             for (indices, scaler) in self.scalers:
-                scaler.fit(np.reshape(P[:,indices], [-1]))
+                scaler.fit(np.reshape(P[:,indices], [-1, 1]))
         return self
 
     def transform(self, X):
