@@ -43,7 +43,7 @@ TV = TopologicalVector(threshold=-1)
 tv = TV.fit_transform(diags)
 print("Topological vector is " + str(tv[0,:]))
 
-PI = PersistenceImage(bandwidth=1., weight=lambda x: x[1], im_range=[0,1,0,1], resolution=[100,100])
+PI = PersistenceImage(bandwidth=.1, weight=lambda x: x[1], im_range=[0,1,0,1], resolution=[100,100])
 pi = PI.fit_transform(diags)
 plt.imshow(np.flip(np.reshape(pi[0], [100,100]), 0))
 plt.show()
