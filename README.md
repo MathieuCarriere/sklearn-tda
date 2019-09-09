@@ -4,8 +4,8 @@
 
 # Description
 
-sklearn_tda is a python package for handling collections of persistence diagrams for machine learning purposes.
-Various preprocessing methods, vectorizations methods and kernels for persistence diagrams are implemented in a [scikit-learn](http://scikit-learn.org/) compatible fashion.
+`sklearn_tda` is a python package for handling collections of persistence diagrams for machine learning purposes.
+Various preprocessing methods, vectorizations methods and kernels for persistence diagrams are implemented in a [`scikit-learn`](http://scikit-learn.org/) compatible fashion.
 Clustering methods from TDA (Mapper and ToMATo) are also implemented.
 
 ### Preprocessing
