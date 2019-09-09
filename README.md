@@ -16,7 +16,7 @@ Currently available classes are:
 
     Parameters: None.
 
-  * **DiagramPreprocessor**: apply a scaler to the diagrams (such as scalers from [scikit-learn](http://scikit-learn.org/)).
+  * **DiagramScaler**: apply scaler(s) to the diagrams (such as scalers from [scikit-learn](http://scikit-learn.org/)).
 
     Parameters:
 
@@ -35,7 +35,6 @@ Currently available classes are:
     | **num_pts** = 10|    Cardinality threshold. |
     | **threshold** = -1|  Distance-to-diagonal threshold. |
     | **location** = "upper"|  Whether to keep the points above ("upper") or below ("lower") the previous thresholds. |
-    | **point_type** = "finite"|  Specifies the input point type. Either "finite" or "essential". If "finite", the output points are ordered by persistence. |
 
   * **Padding**: add dummy points to each diagram so that they all have the same cardinality. All points are given an additional coordinate
     indicating if the point was added after padding (0) or already present before applying this class (1).
@@ -53,6 +52,7 @@ Currently available classes are:
 
     | **name** | **description** |
     | --- | --- |
+    | **use** = False|     Whether to use the class or not. |
     | **limit** = np.inf | Diagram points with ordinate equal to **limit** will be considered as essential. |
     | **point_type** = "finite"| Specifies the point type to return. Either "finite" or "essential". |
 
@@ -69,7 +69,7 @@ Currently available classes are:
     | --- | --- |
     |**num_landscapes** = 5| Number of landscapes.|
     |**resolution** = 100| Number of sample points of each landscape.|
-    |**ls_range** = [np.nan, np.nan]| Range of each landscape. If np.nan, it is set to min and max of the diagram coordinates.|
+    |**sample_range** = [np.nan, np.nan]| Range of each landscape. If np.nan, it is set to min and max of the diagram coordinates.|
 
   * **PersistenceImage**: implementation of [persistence images](http://jmlr.org/papers/v18/16-337.html).
 
@@ -89,7 +89,7 @@ Currently available classes are:
     | **name** | **description** |
     | --- | --- |
     |**resolution** = 100| Number of sample points of Betti curve.|
-    |**bc_range** = [np.nan, np.nan]| Range of Betti curve. If np.nan, it is set to min and max of the diagram coordinates.|
+    |**sample_range** = [np.nan, np.nan]| Range of Betti curve. If np.nan, it is set to min and max of the diagram coordinates.|
 
   * **Silhouette**: implementation of [silhouettes](http://jocg.org/index.php/jocg/article/view/203).
 
@@ -99,7 +99,7 @@ Currently available classes are:
     | --- | --- |
     |**weight** = lambda x: 1| Weight on diagram points. It is a python function.|
     |**resolution** = 100| Number of sample points of silhouette.|
-    |**range** = [np.nan, np.nan]| Range of silhouette. If np.nan, it is set to min and max of the diagram coordinates.|
+    |**sample_range** = [np.nan, np.nan]| Range of silhouette. If np.nan, it is set to min and max of the diagram coordinates.|
 
   * **TopologicalVector**: implementation of [distance vectors](https://diglib.eg.org/handle/10.1111/cgf12692).
 
@@ -127,7 +127,7 @@ Currently available classes are:
     |**mode** = "scalar"| Whether to compute the entropy statistic or the entropy summary function. Either "scalar" or "vector". |
     |**normalized** = True| Whether to normalize the entropy summary function.|
     |**resolution** = 100| Number of sample points of entropy summary function.|
-    |**bc_range** = [np.nan, np.nan]| Range of entropy summary function. If np.nan, it is set to min and max of the diagram coordinates.|
+    |**sample_range** = [np.nan, np.nan]| Range of entropy summary function. If np.nan, it is set to min and max of the diagram coordinates.|
 
 ### Kernels
 

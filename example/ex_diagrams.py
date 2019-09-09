@@ -1,16 +1,21 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.kernel_approximation import RBFSampler
+from sklearn.preprocessing import MinMaxScaler
 from sklearn_tda import *
+from sklearn_tda.preprocessing import Clamping
 
-D = np.array([[0.,4.],[1.,2.],[3.,8.],[6.,8.]])
-plt.scatter(D[:,0],D[:,1])
-plt.plot([0.,10.],[0.,10.])
-plt.show()
-
+D = np.array([[0.,4.],[1.,2.],[3.,8.],[6.,8.], [0., np.inf], [5., np.inf]])
 diags = [D]
 
-LS = Landscape(resolution = 1000)
+diags = DiagramSelector(use=True, point_type="finite").fit_transform(diags)
+diags = DiagramScaler(use=True, scalers=[([0,1], MinMaxScaler())]).fit_transform(diags)
+D = diags[0]
+plt.scatter(D[:,0],D[:,1])
+plt.plot([0.,1.],[0.,1.])
+plt.show()
+
+LS = Landscape(resolution=1000)
 L = LS.fit_transform(diags)
 plt.plot(L[0][:1000])
 plt.plot(L[0][1000:2000])
@@ -38,7 +43,7 @@ TV = TopologicalVector(threshold=-1)
 tv = TV.fit_transform(diags)
 print("Topological vector is " + str(tv[0,:]))
 
-PI = PersistenceImage(bandwidth=1., weight=lambda x: x[1], im_range=[0,10,0,10], resolution=[100,100])
+PI = PersistenceImage(bandwidth=1., weight=lambda x: x[1], im_range=[0,1,0,1], resolution=[100,100])
 pi = PI.fit_transform(diags)
 plt.imshow(np.flip(np.reshape(pi[0], [100,100]), 0))
 plt.show()
@@ -52,13 +57,17 @@ et = ET.fit_transform(diags)
 plt.plot(et[0])
 plt.show()
 
-plt.scatter(D[:,0],D[:,1])
 D = np.array([[1.,5.],[3.,6.],[2.,7.]])
-plt.scatter(D[:,0],D[:,1])
-plt.plot([0.,10.],[0.,10.])
-plt.show()
-
 diags2 = [D]
+
+diags2 = DiagramScaler(use=True, scalers=[([0,1], MinMaxScaler())]).fit_transform(diags2)
+
+D = diags[0]
+plt.scatter(D[:,0],D[:,1])
+D = diags2[0]
+plt.scatter(D[:,0],D[:,1])
+plt.plot([0.,1.],[0.,1.])
+plt.show()
 
 def arctan(C,p):
   return lambda x: C*np.arctan(np.power(x[1], p))

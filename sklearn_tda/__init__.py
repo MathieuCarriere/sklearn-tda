@@ -17,9 +17,10 @@ __all__ = [
 
     "DiagramSelector",
     "ProminentPoints",
-    "DiagramPreprocessor",
+    "DiagramScaler",
     "Padding",
     "BirthPersistenceTransform",
+    "Clamping",
 
     "SlicedWassersteinKernel",
     "PersistenceWeightedGaussianKernel",
