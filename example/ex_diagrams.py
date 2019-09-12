@@ -10,6 +10,8 @@ diags = [D]
 
 diags = DiagramSelector(use=True, point_type="finite").fit_transform(diags)
 diags = DiagramScaler(use=True, scalers=[([0,1], MinMaxScaler())]).fit_transform(diags)
+diags = DiagramScaler(use=True, scalers=[([1], Clamping(limit=.9))]).fit_transform(diags)
+
 D = diags[0]
 plt.scatter(D[:,0],D[:,1])
 plt.plot([0.,1.],[0.,1.])
