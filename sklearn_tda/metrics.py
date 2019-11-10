@@ -27,7 +27,7 @@ class SlicedWassersteinDistance(BaseEstimator, TransformerMixin):
         Constructor for the SlicedWassersteinDistance class.
 
         Attributes:
-            num_directions (int): number of lines to sample uniformly from [-pi,pi] in order to approximate and speed up the distance computation (default 10). 
+            num_directions (int): number of lines evenly sampled from [-pi/2,pi/2] in order to approximate and speed up the distance computation (default 10). 
         """
         self.num_directions = num_directions
         thetas = np.linspace(-np.pi/2, np.pi/2, num=self.num_directions+1)[np.newaxis,:-1]
@@ -35,7 +35,7 @@ class SlicedWassersteinDistance(BaseEstimator, TransformerMixin):
 
     def fit(self, X, y=None):
         """
-        Fit the SlicedWassersteinDistance class on a list of persistence diagrams: persistence diagrams are projected onto the different lines. The diagrams themselves and their projections are then stored in a numpy array called **diagrams**.
+        Fit the SlicedWassersteinDistance class on a list of persistence diagrams: persistence diagrams are projected onto the different lines. The diagrams themselves and their projections are then stored in numpy arrays, called **diagrams_** and **approx_diag_**.
 
         Parameters:
             X (list of n x 2 numpy arrays): input persistence diagrams.
@@ -120,7 +120,6 @@ class BottleneckDistance(BaseEstimator, TransformerMixin):
 
             if USE_GUDHI:
                 for i in range(num_diag1):
-                    #sys.stdout.write( str(i*1.0 / num_diag1) + "\r")
                     for j in range(i+1, num_diag1):
                         matrix[i,j] = bottleneck_distance(X[i], X[j], self.epsilon)
                         matrix[j,i] = matrix[i,j]
@@ -133,7 +132,6 @@ class BottleneckDistance(BaseEstimator, TransformerMixin):
 
             if USE_GUDHI:
                 for i in range(num_diag1):
-                    #sys.stdout.write( str(i*1.0 / num_diag1) + "\r")
                     for j in range(num_diag2):
                         matrix[i,j] = bottleneck_distance(X[i], self.diagrams_[j], self.epsilon)
             else:
