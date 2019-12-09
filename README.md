@@ -2,6 +2,8 @@
 
 **Author**: Mathieu Carrière.
 
+**Warning**: this code is no longer maintained since it is now part of the Gudhi library: https://github.com/GUDHI/gudhi-devel. I recommend anyone willing to use this code to check Gudhi instead (except for Mapper and Tomato).
+
 # Description
 
 `sklearn_tda` is a python package for handling collections of persistence diagrams for machine learning purposes.
