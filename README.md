@@ -2,7 +2,7 @@
 
 **Author**: Mathieu Carrière.
 
-**Warning**: this code is no longer maintained since it is now part of the Gudhi library (except for Mapper and Tomato) as the representations python module: see https://github.com/GUDHI/gudhi-devel and https://github.com/GUDHI/gudhi-devel/tree/master/src/python/gudhi/representations. I recommend anyone willing to use this code to check Gudhi instead.
+**Warning**: this code is no longer maintained since it is now part of the Gudhi library (except for Mapper and Tomato) as the representations python module: see https://gudhi.inria.fr/ and https://gudhi.inria.fr/python/3.1.0.rc1/representations.html. I recommend anyone willing to use this code to check Gudhi instead.
 
 # Description
 
