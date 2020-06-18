@@ -120,13 +120,16 @@ class MapperComplex(BaseEstimator, TransformerMixin):
         num_pts, num_filters, num_colors = self.filters.shape[0], self.filters.shape[1], self.colors.shape[1]
 
         # If some resolutions are not specified, automatically compute them
-        if np.any(np.isnan(self.resolutions)):
+        if np.any(np.isnan(self.resolutions)) or self.clustering is None:
             delta, resolutions = self.get_optimal_parameters_for_agglomerative_clustering(X=X, beta=0., C=10, N=100)
-            if self.input == "point cloud":
-                self.clustering = AgglomerativeClustering(n_clusters=None, linkage="single", distance_threshold=delta, affinity="euclidean")  
-            else:
-                self.clustering = AgglomerativeClustering(n_clusters=None, linkage="single", distance_threshold=delta, affinity="precomputed")
-            self.resolutions = np.where(np.isnan(self.resolutions), resolutions, self.resolutions)
+            if self.clustering is None:
+                if self.input == "point cloud":
+                    self.clustering = AgglomerativeClustering(n_clusters=None, linkage="single", distance_threshold=delta, affinity="euclidean")  
+                else:
+                    self.clustering = AgglomerativeClustering(n_clusters=None, linkage="single", distance_threshold=delta, affinity="precomputed")
+            if np.any(np.isnan(self.resolutions)):
+                self.resolutions = np.where(np.isnan(self.resolutions), resolutions, self.resolutions)
+                self.resolutions = np.array([int(r) for r in self.resolutions])
 
         # If some filter limits are unspecified, automatically compute them
         self.filter_bnds = np.where(np.isnan(self.filter_bnds), np.hstack([np.min(self.filters, axis=0)[:,np.newaxis], np.max(self.filters, axis=0)[:,np.newaxis]]), self.filter_bnds)
