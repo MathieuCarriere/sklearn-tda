@@ -57,7 +57,7 @@ class MapperComplex(BaseEstimator, TransformerMixin):
     """
     This is a class for computing Mapper simplicial complexes on point clouds or distance matrices. 
     """
-    def __init__(self, filters, filter_bnds, colors, resolutions, gains, inp="point cloud", clustering=DBSCAN(), mask=0):
+    def __init__(self, filters, filter_bnds, colors, resolutions, gains, inp="point cloud", clustering=DBSCAN(), mask=0, N=100, beta=0., C=10.):
         """
         Constructor for the MapperComplex class.
 
@@ -70,12 +70,15 @@ class MapperComplex(BaseEstimator, TransformerMixin):
             gains (numpy array of shape num_filters containing doubles in [0,1]): gain of each filter, ie overlap percentage of the intervals covering each filter image.
             clustering (class): clustering class (default sklearn.cluster.DBSCAN()). Common clustering classes can be found in the scikit-learn library (such as AgglomerativeClustering for instance).
             mask (int): threshold on the size of the Mapper nodes (default 0). Any node associated to a subpopulation with less than **mask** points will be removed.
+            N (int): subsampling iterations (default 100). See http://www.jmlr.org/papers/volume19/17-291/17-291.pdf for details.
+            beta (double): exponent parameter (default 0.). See http://www.jmlr.org/papers/volume19/17-291/17-291.pdf for details.
+            C (double): constant parameter (default 10.). See http://www.jmlr.org/papers/volume19/17-291/17-291.pdf for details.
 
             mapper_ (gudhi SimplexTree): Mapper simplicial complex computed after calling the fit() method
             node_info_ (dictionary): various information associated to the nodes of the Mapper. 
         """
         self.filters, self.filter_bnds, self.resolutions, self.gains, self.colors, self.clustering = filters, filter_bnds, resolutions, gains, colors, clustering
-        self.input, self.mask = inp, mask
+        self.input, self.mask, self.N, self.beta, self.C = inp, mask, N, beta, C
 
     def get_optimal_parameters_for_agglomerative_clustering(self, X, beta=0., C=10., N=100):
         """
@@ -121,7 +124,7 @@ class MapperComplex(BaseEstimator, TransformerMixin):
 
         # If some resolutions are not specified, automatically compute them
         if np.any(np.isnan(self.resolutions)) or self.clustering is None:
-            delta, resolutions = self.get_optimal_parameters_for_agglomerative_clustering(X=X, beta=0., C=10, N=100)
+            delta, resolutions = self.get_optimal_parameters_for_agglomerative_clustering(X=X, beta=self.beta, C=self.C, N=self.N)
             if self.clustering is None:
                 if self.input == "point cloud":
                     self.clustering = AgglomerativeClustering(n_clusters=None, linkage="single", distance_threshold=delta, affinity="euclidean")  
