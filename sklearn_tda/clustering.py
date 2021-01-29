@@ -435,15 +435,21 @@ class ToMATo(BaseEstimator, TransformerMixin):
         if self.verbose:
             print("Computing underlying graph")
         if self.n_neighbors is not None: 
-            A = kneighbors_graph(X, self.n_neighbors).toarray()
-            A = np.minimum(A + A.T, np.ones(A.shape))
+            A = kneighbors_graph(X, self.n_neighbors, include_self=False, n_jobs=-1)
+            A = A + A.T         # symmetrize matrix
+            A[A.nonzero()] = 1  # setting >1 values to 1
         elif self.radius is not None:
-            A = radius_neighbors_graph(X, self.radius).toarray()
+            A = radius_neighbors_graph(X, self.radius, include_self=False, n_jobs=-1)
+
         else:
             radius = estimate_scale(X, N=100, inp="point cloud", C=10., beta=0.)
             if self.verbose:
                 print("radius = " + str(radius))
-            A = radius_neighbors_graph(X, radius).toarray()
+            A = radius_neighbors_graph(X, radius, include_self=False, n_jobs=-1)
+
+        # Post processing neighborhood matrix:
+        # Store neighbor indices for each point (points on axis 0, neighbor indices on axis 1)
+        A_nonzero_idxs = np.split(A.indices, A.indptr)[1:-1]
 
         if self.verbose:
             print("Sorting points by density")
@@ -460,10 +466,12 @@ class ToMATo(BaseEstimator, TransformerMixin):
             st = gd.SimplexTree()
             for i in range(num_pts):
                 st.insert([i], filtration=-self.density_values[i])
-            for i in range(num_pts):
-                for j in range(i+1,num_pts):
-                    if A[i,j] == 1.:
-                        st.insert([i,j], filtration=max(-self.density_values[i],-self.density_values[j]))
+            # Add 1-simplices from (knn or radius neighbor) graph into simplex tree
+            A_coo = A.tocoo(copy=False)  # loop through non-zero entries in sparse matrix; very fast in coo format
+            for i, j in zip(A_coo.row, A_coo.col):
+                st.insert([i,j], filtration=max(-self.density_values[i],-self.density_values[j]))
+            st.initialize_filtration()  # From gudhi doc: This function must be launched before persistence(), after insert()
+
             d = st.persistence()
             plot = gd.plot_persistence_diagram(d)
             plot.show()
@@ -483,7 +491,7 @@ class ToMATo(BaseEstimator, TransformerMixin):
         for i in range(num_pts):
 
             current_pt = sorted_idxs[i]
-            neighbors = np.squeeze(np.argwhere(A[current_pt,:] == 1.))
+            neighbors = A_nonzero_idxs[current_pt]   # get neighbor indices from (knn or radius neighbor) graph
             higher_neighbors = [n for n in neighbors if inv_sorted_idxs[n] <= i] if len(neighbors.shape) > 0 else []
 
             if higher_neighbors == []:
